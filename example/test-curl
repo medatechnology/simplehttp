@@ -1,0 +1,26 @@
+#!/bin/bash
+. ./.env.example
+# . ./simplehttp/example/.env.example
+
+TEST_API="/api/status"
+# TEST_API="/api/users"
+# TEST_API="/api/header"
+
+AUTH_HEADER=$(echo -n "yudi:yudiyudi" | base64)
+
+
+curl -X GET \
+  -H "Origin: http://example.com" \
+  -H "User-Agent: CustomClient/1.0" \
+  -H "Authorization: Basic $AUTH_HEADER" \
+  -H "Accept: application/json" \
+  http://localhost:${MEDA_PORT}${TEST_API}
+
+  # -H "X-Real-IP: 192.168.1.100" \
+# for i in {1..30}; do 
+#   curl -X GET \
+#   -H "X-Real-IP: 192.100.0.100" \
+#   http://localhost:${MEDA_PORT}${TEST_API}
+#   echo "${i}"
+#   # sleep 0.07
+# done
