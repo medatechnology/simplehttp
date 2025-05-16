@@ -213,7 +213,7 @@ func (c *FiberContext) SendFile(filepath string, attachment bool) error {
 }
 
 // WebSocket handling
-func (c *FiberContext) Upgrade() (simplehttp.MedaWebsocket, error) {
+func (c *FiberContext) Upgrade() (simplehttp.Websocket, error) {
 	if !websocket.IsWebSocketUpgrade(c.ctx) {
 		return nil, fmt.Errorf("not a websocket upgrade request")
 	}

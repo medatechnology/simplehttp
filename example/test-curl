@@ -14,13 +14,13 @@ curl -X GET \
   -H "User-Agent: CustomClient/1.0" \
   -H "Authorization: Basic $AUTH_HEADER" \
   -H "Accept: application/json" \
-  http://localhost:${MEDA_PORT}${TEST_API}
+  http://localhost:${SIMPLEHTTP_PORT}${TEST_API}
 
   # -H "X-Real-IP: 192.168.1.100" \
 # for i in {1..30}; do 
 #   curl -X GET \
 #   -H "X-Real-IP: 192.100.0.100" \
-#   http://localhost:${MEDA_PORT}${TEST_API}
+#   http://localhost:${SIMPLEHTTP_PORT}${TEST_API}
 #   echo "${i}"
 #   # sleep 0.07
 # done

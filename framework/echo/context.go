@@ -19,7 +19,7 @@ type EchoContext struct {
 	config *simplehttp.Config
 }
 
-func NewEchoContext(c echo.Context, cfgs ...*simplehttp.Config) simplehttp.MedaContext {
+func NewEchoContext(c echo.Context, cfgs ...*simplehttp.Config) simplehttp.Context {
 	// to enable optional parameter of configs, but in actual always pass 1
 	if len(cfgs) > 0 && cfgs[0] != nil {
 		return &EchoContext{ctx: c, config: cfgs[0]}
@@ -119,7 +119,7 @@ func (c *EchoContext) SendFile(filepath string, attachment bool) error {
 	return c.ctx.File(filepath)
 }
 
-func (c *EchoContext) Upgrade() (simplehttp.MedaWebsocket, error) {
+func (c *EchoContext) Upgrade() (simplehttp.Websocket, error) {
 	var checkOrigin func(r *http.Request) bool
 
 	// Configure origin checker based on CORS config if available

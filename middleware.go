@@ -13,34 +13,35 @@ import (
 	"github.com/mileusna/useragent"
 )
 
-const (
-	REQUEST_HEADER_PARSED_STRING = "request_header"
+var (
+	REQUEST_HEADER_PARSED_STRING string = "request_header"
 
-	HEADER_AUTHORIZATION  = "authorization"
-	HEADER_MEDA_API_KEY   = "MEDA_API_KEY"
-	HEADER_PRIVATE_TOKEN  = "PRIVATE_TOKEN"
-	HEADER_CODE           = "code"
-	HEADER_CONNECTING_IP  = "CF-Connecting-IP"
-	HEADER_FORWARDED_FOR  = "X-Forwarded-For"
-	HEADER_REAL_IP        = "X-Real-IP"
-	HEADER_TRUE_CLIENT_IP = "True-Client-IP"
-	HEADER_USER_AGENT     = "User-Agent"
-	HEADER_ACCEPT_TYPE    = "Accept"
-	HEADER_TRACE_ID       = "X-Trace-ID"
-	HEADER_REQUEST_ID     = "X-Request-ID"
-	HEADER_ORIGIN         = "Origin"
+	HEADER_AUTHORIZATION  string = "authorization"
+	HEADER_MEDA_API_KEY   string = "MEDA_API_KEY"
+	HEADER_API_KEY        string = "API_KEY"
+	HEADER_PRIVATE_TOKEN  string = "PRIVATE_TOKEN"
+	HEADER_CODE           string = "code"
+	HEADER_CONNECTING_IP  string = "CF-Connecting-IP"
+	HEADER_FORWARDED_FOR  string = "X-Forwarded-For"
+	HEADER_REAL_IP        string = "X-Real-IP"
+	HEADER_TRUE_CLIENT_IP string = "True-Client-IP"
+	HEADER_USER_AGENT     string = "User-Agent"
+	HEADER_ACCEPT_TYPE    string = "Accept"
+	HEADER_TRACE_ID       string = "X-Trace-ID"
+	HEADER_REQUEST_ID     string = "X-Request-ID"
+	HEADER_ORIGIN         string = "Origin"
 )
 
 // NamedMiddleware wraps a middleware with a name for debugging
 type NamedMiddleware struct {
 	name       string
-	middleware MedaMiddlewareFunc
+	middleware MiddlewareFunc
 }
 
 // GetMiddlewareName returns the name of the middleware if it's a NamedMiddleware,
 // or "unnamed" if it's a regular middleware
 //
-//	func GetMiddlewareName(m MedaMiddlewareFunc) string {
+//	func GetMiddlewareName(m MiddlewareFunc) string {
 //		if named, ok := m.(*NamedMiddleware); ok {
 //			return named.name
 //		}
@@ -51,15 +52,15 @@ func (m NamedMiddleware) Name() string {
 }
 
 // WithName adds a name to a middleware
-func WithName(name string, m MedaMiddlewareFunc) NamedMiddleware {
+func WithName(name string, m MiddlewareFunc) NamedMiddleware {
 	return NamedMiddleware{
 		name:       name,
 		middleware: m,
 	}
 }
 
-// Implement the MedaMiddleware interface
-func (n NamedMiddleware) Handle(next MedaHandlerFunc) MedaHandlerFunc {
+// Implement the SimpleHttpMiddleware interface
+func (n NamedMiddleware) Handle(next HandlerFunc) HandlerFunc {
 	return n.middleware(next)
 }
 
@@ -73,7 +74,8 @@ type HeaderAuthorization struct {
 type RequestHeader struct {
 	Authorization HeaderAuthorization `db:"header_authorization"             json:"header_authorization,omitempty"`
 	// below are specific to some Meda lib, in this case auth-lib
-	APIKey       string `db:"api_key"             json:"MEDA_API_KEY,omitempty"`
+	MedaAPIKey   string `db:"meda_api_key"        json:"MEDA_API_KEY,omitempty"`
+	APIKey       string `db:"api_key"             json:"API_KEY,omitempty"`
 	PrivateToken string `db:"private_token"       json:"PRIVATE_TOKEN,omitempty"`
 	Code         string `db:"code"                json:"code,omitempty"`
 	// standard header
@@ -110,7 +112,8 @@ func (mh *RequestHeader) FromHttpRequest(stdRequest *http.Request) {
 	// }
 
 	// Meda specific lib, auth-lib
-	mh.APIKey = stdRequest.Header.Get(HEADER_MEDA_API_KEY)
+	mh.MedaAPIKey = stdRequest.Header.Get(HEADER_MEDA_API_KEY)
+	mh.APIKey = stdRequest.Header.Get(HEADER_API_KEY)
 	mh.PrivateToken = stdRequest.Header.Get(HEADER_PRIVATE_TOKEN)
 	mh.Code = stdRequest.Header.Get(HEADER_CODE)
 
@@ -160,14 +163,14 @@ func (mh *RequestHeader) IP() string {
 	return mh.RemoteIP
 }
 
-func MiddlewareHeaderParser() MedaMiddleware {
+func MiddlewareHeaderParser() Middleware {
 	return WithName("header parser", HeaderParser())
 }
 
 // Standard middleware implementations
-func HeaderParser() MedaMiddlewareFunc {
-	return func(next MedaHandlerFunc) MedaHandlerFunc {
-		return func(c MedaContext) error {
+func HeaderParser() MiddlewareFunc {
+	return func(next HandlerFunc) HandlerFunc {
+		return func(c Context) error {
 			// fmt.Println("--- header middleware")
 			// var header RequestHeader
 			// header.FromHttpHeader(c.Request())
@@ -199,12 +202,12 @@ type CORSConfig struct {
 	MaxAge           time.Duration
 }
 
-func MiddlewareCORS(config *CORSConfig) MedaMiddleware {
+func MiddlewareCORS(config *CORSConfig) Middleware {
 	return WithName("CORS bypass", CORS(config))
 }
 
 // CORS middleware returns a Middleware that adds CORS headers to the response
-func CORS(config *CORSConfig) MedaMiddlewareFunc {
+func CORS(config *CORSConfig) MiddlewareFunc {
 	// Use default config if nil
 	if config == nil {
 		config = &CORSConfig{
@@ -227,8 +230,8 @@ func CORS(config *CORSConfig) MedaMiddlewareFunc {
 
 	// IMPORTANT: Remember to use context SetResponseHeader or SetRequestHeader!!!
 	//            doing c.Response().Header().Set() -- doesn't work, it will set a copy of header and won't persist
-	return func(next MedaHandlerFunc) MedaHandlerFunc {
-		return func(c MedaContext) error {
+	return func(next HandlerFunc) HandlerFunc {
+		return func(c Context) error {
 			// fmt.Println("--- cors middleware")
 			req := c.Request()
 			// res := c.Response()
@@ -289,27 +292,27 @@ type CompressionConfig struct {
 	Types   []string // Content types to compress
 }
 
-func MiddlewareCompress(config CompressionConfig) MedaMiddleware {
+func MiddlewareCompress(config CompressionConfig) Middleware {
 	return WithName("compression", Compress(config))
 }
 
 // Compress returns a compression middleware
-func Compress(config CompressionConfig) MedaMiddlewareFunc {
-	return func(next MedaHandlerFunc) MedaHandlerFunc {
-		return func(c MedaContext) error {
+func Compress(config CompressionConfig) MiddlewareFunc {
+	return func(next HandlerFunc) HandlerFunc {
+		return func(c Context) error {
 			// Implementation details for compression
 			return next(c)
 		}
 	}
 }
 
-func MiddlewareBasicAuth(username, password string) MedaMiddleware {
+func MiddlewareBasicAuth(username, password string) Middleware {
 	return WithName("basic auth", BasicAuth(username, password))
 }
 
-func BasicAuth(username, password string) MedaMiddlewareFunc {
-	return func(next MedaHandlerFunc) MedaHandlerFunc {
-		return func(c MedaContext) error {
+func BasicAuth(username, password string) MiddlewareFunc {
+	return func(next HandlerFunc) HandlerFunc {
+		return func(c Context) error {
 			// fmt.Println("--- auth middleware")
 
 			auth := c.GetHeader("Authorization")
@@ -341,14 +344,14 @@ func validateBasicAuth(auth, username, password string) bool {
 	}
 }
 
-func MiddlewareRequestID() MedaMiddleware {
+func MiddlewareRequestID() Middleware {
 	return WithName("request ID", RequestID())
 }
 
 // RequestID middleware adds a unique ID to each request
-func RequestID() MedaMiddlewareFunc {
-	return func(next MedaHandlerFunc) MedaHandlerFunc {
-		return func(c MedaContext) error {
+func RequestID() MiddlewareFunc {
+	return func(next HandlerFunc) HandlerFunc {
+		return func(c Context) error {
 			// fmt.Println("--- requestID middleware")
 
 			rid := c.GetHeader(HEADER_REQUEST_ID)
@@ -369,14 +372,14 @@ func RequestID() MedaMiddlewareFunc {
 	}
 }
 
-func MiddlewareTimeout(config TimeOutConfig) MedaMiddleware {
+func MiddlewareTimeout(config TimeOutConfig) Middleware {
 	return WithName("timeout middleware", Timeout(config))
 }
 
 // Timeout middleware adds a timeout to the request context
-func Timeout(config TimeOutConfig) MedaMiddlewareFunc {
-	return func(next MedaHandlerFunc) MedaHandlerFunc {
-		return func(c MedaContext) error {
+func Timeout(config TimeOutConfig) MiddlewareFunc {
+	return func(next HandlerFunc) HandlerFunc {
+		return func(c Context) error {
 			// fmt.Println("--- timeout middleware")
 
 			ctx, cancel := context.WithTimeout(c.Context(), config.ReadTimeout)
@@ -406,17 +409,17 @@ type RecoverConfig struct {
 	// LogStackTrace determines whether to log stack traces
 	LogStackTrace bool
 	// ErrorHandler is a custom handler for recovered panics
-	ErrorHandler func(c MedaContext, err interface{}, stack []byte) error
+	ErrorHandler func(c Context, err interface{}, stack []byte) error
 	// Logger for recording panic information
 	Logger Logger
 }
 
-func MiddlewareRecover(config ...RecoverConfig) MedaMiddleware {
+func MiddlewareRecover(config ...RecoverConfig) Middleware {
 	return WithName("recover", Recover(config...))
 }
 
 // Recover returns a middleware that recovers from panics
-func Recover(config ...RecoverConfig) MedaMiddlewareFunc {
+func Recover(config ...RecoverConfig) MiddlewareFunc {
 	// Setup config
 	cfg := RecoverConfig{
 		// DefaultRecoverConfig provides sensible defaults for Recover middleware
@@ -433,8 +436,8 @@ func Recover(config ...RecoverConfig) MedaMiddlewareFunc {
 		cfg.Logger = NewDefaultLogger()
 	}
 
-	return func(next MedaHandlerFunc) MedaHandlerFunc {
-		return func(c MedaContext) error {
+	return func(next HandlerFunc) HandlerFunc {
+		return func(c Context) error {
 			defer func() {
 				if r := recover(); r != nil {
 					var err error

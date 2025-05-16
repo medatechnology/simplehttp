@@ -19,7 +19,7 @@ const (
 type Server struct {
 	app        *fiber.App
 	config     *simplehttp.Config
-	middleware []simplehttp.MedaMiddleware
+	middleware []simplehttp.Middleware
 	mu         sync.RWMutex
 }
 
@@ -55,38 +55,38 @@ func (s *Server) PrintMiddleware(verbose bool) {
 	}
 }
 
-func (s *Server) applyMiddleware(handler simplehttp.MedaHandlerFunc) simplehttp.MedaHandlerFunc {
+func (s *Server) applyMiddleware(handler simplehttp.HandlerFunc) simplehttp.HandlerFunc {
 	for i := len(s.middleware) - 1; i >= 0; i-- {
 		handler = s.middleware[i].Handle(handler)
 	}
 	return handler
 }
 
-func (s *Server) GET(path string, handler simplehttp.MedaHandlerFunc) {
+func (s *Server) GET(path string, handler simplehttp.HandlerFunc) {
 	s.app.Get(path, Adapter(s.applyMiddleware(handler)))
 }
 
-func (s *Server) POST(path string, handler simplehttp.MedaHandlerFunc) {
+func (s *Server) POST(path string, handler simplehttp.HandlerFunc) {
 	s.app.Post(path, Adapter(s.applyMiddleware(handler)))
 }
 
-func (s *Server) PUT(path string, handler simplehttp.MedaHandlerFunc) {
+func (s *Server) PUT(path string, handler simplehttp.HandlerFunc) {
 	s.app.Put(path, Adapter(s.applyMiddleware(handler)))
 }
 
-func (s *Server) DELETE(path string, handler simplehttp.MedaHandlerFunc) {
+func (s *Server) DELETE(path string, handler simplehttp.HandlerFunc) {
 	s.app.Delete(path, Adapter(s.applyMiddleware(handler)))
 }
 
-func (s *Server) PATCH(path string, handler simplehttp.MedaHandlerFunc) {
+func (s *Server) PATCH(path string, handler simplehttp.HandlerFunc) {
 	s.app.Patch(path, Adapter(s.applyMiddleware(handler)))
 }
 
-func (s *Server) OPTIONS(path string, handler simplehttp.MedaHandlerFunc) {
+func (s *Server) OPTIONS(path string, handler simplehttp.HandlerFunc) {
 	s.app.Options(path, Adapter(s.applyMiddleware(handler)))
 }
 
-func (s *Server) HEAD(path string, handler simplehttp.MedaHandlerFunc) {
+func (s *Server) HEAD(path string, handler simplehttp.HandlerFunc) {
 	s.app.Head(path, Adapter(s.applyMiddleware(handler)))
 }
 
@@ -104,7 +104,7 @@ func (s *Server) StaticFile(path, filepath string) {
 	s.app.Static(path, filepath)
 }
 
-func (s *Server) WebSocket(path string, handler func(simplehttp.MedaWebsocket) error) {
+func (s *Server) WebSocket(path string, handler func(simplehttp.Websocket) error) {
 	// Configure WebSocket route
 	s.app.Use(path, func(c *fiber.Ctx) error {
 		if websocket.IsWebSocketUpgrade(c) {
@@ -122,14 +122,14 @@ func (s *Server) WebSocket(path string, handler func(simplehttp.MedaWebsocket) e
 	}))
 }
 
-func (s *Server) Group(prefix string) simplehttp.MedaRouter {
+func (s *Server) Group(prefix string) simplehttp.Router {
 	return &RouterGroup{
 		prefix: prefix,
 		server: s,
 	}
 }
 
-func (s *Server) Use(middleware ...simplehttp.MedaMiddleware) {
+func (s *Server) Use(middleware ...simplehttp.Middleware) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.middleware = append(s.middleware, middleware...)
@@ -222,10 +222,10 @@ func (s *Server) Shutdown(ctx context.Context) error {
 type RouterGroup struct {
 	prefix     string
 	server     *Server
-	middleware []simplehttp.MedaMiddleware
+	middleware []simplehttp.Middleware
 }
 
-func (g *RouterGroup) applyMiddleware(handler simplehttp.MedaHandlerFunc) simplehttp.MedaHandlerFunc {
+func (g *RouterGroup) applyMiddleware(handler simplehttp.HandlerFunc) simplehttp.HandlerFunc {
 	// First apply group-specific middleware (in reverse order)
 	for i := len(g.middleware) - 1; i >= 0; i-- {
 		handler = g.middleware[i].Handle(handler)
@@ -239,31 +239,31 @@ func (g *RouterGroup) applyMiddleware(handler simplehttp.MedaHandlerFunc) simple
 	return handler
 }
 
-func (g *RouterGroup) GET(path string, handler simplehttp.MedaHandlerFunc) {
+func (g *RouterGroup) GET(path string, handler simplehttp.HandlerFunc) {
 	g.server.app.Get(g.prefix+path, Adapter(g.applyMiddleware(handler)))
 }
 
-func (g *RouterGroup) POST(path string, handler simplehttp.MedaHandlerFunc) {
+func (g *RouterGroup) POST(path string, handler simplehttp.HandlerFunc) {
 	g.server.app.Post(g.prefix+path, Adapter(g.applyMiddleware(handler)))
 }
 
-func (g *RouterGroup) PUT(path string, handler simplehttp.MedaHandlerFunc) {
+func (g *RouterGroup) PUT(path string, handler simplehttp.HandlerFunc) {
 	g.server.app.Put(g.prefix+path, Adapter(g.applyMiddleware(handler)))
 }
 
-func (g *RouterGroup) DELETE(path string, handler simplehttp.MedaHandlerFunc) {
+func (g *RouterGroup) DELETE(path string, handler simplehttp.HandlerFunc) {
 	g.server.app.Delete(g.prefix+path, Adapter(g.applyMiddleware(handler)))
 }
 
-func (g *RouterGroup) PATCH(path string, handler simplehttp.MedaHandlerFunc) {
+func (g *RouterGroup) PATCH(path string, handler simplehttp.HandlerFunc) {
 	g.server.app.Patch(g.prefix+path, Adapter(g.applyMiddleware(handler)))
 }
 
-func (g *RouterGroup) OPTIONS(path string, handler simplehttp.MedaHandlerFunc) {
+func (g *RouterGroup) OPTIONS(path string, handler simplehttp.HandlerFunc) {
 	g.server.app.Options(g.prefix+path, Adapter(g.applyMiddleware(handler)))
 }
 
-func (g *RouterGroup) HEAD(path string, handler simplehttp.MedaHandlerFunc) {
+func (g *RouterGroup) HEAD(path string, handler simplehttp.HandlerFunc) {
 	g.server.app.Head(g.prefix+path, Adapter(g.applyMiddleware(handler)))
 }
 
@@ -275,23 +275,23 @@ func (g *RouterGroup) StaticFile(path, filepath string) {
 	g.server.StaticFile(g.prefix+path, filepath)
 }
 
-func (g *RouterGroup) WebSocket(path string, handler func(simplehttp.MedaWebsocket) error) {
+func (g *RouterGroup) WebSocket(path string, handler func(simplehttp.Websocket) error) {
 	// Apply middleware to WebSocket handler
-	wrappedHandler := func(ws simplehttp.MedaWebsocket) error {
+	wrappedHandler := func(ws simplehttp.Websocket) error {
 		return handler(ws)
 	}
 
 	g.server.WebSocket(g.prefix+path, wrappedHandler)
 }
 
-func (g *RouterGroup) Group(prefix string) simplehttp.MedaRouter {
+func (g *RouterGroup) Group(prefix string) simplehttp.Router {
 	return &RouterGroup{
 		prefix:     g.prefix + prefix,
 		server:     g.server,
-		middleware: make([]simplehttp.MedaMiddleware, 0),
+		middleware: make([]simplehttp.Middleware, 0),
 	}
 }
 
-func (g *RouterGroup) Use(middleware ...simplehttp.MedaMiddleware) {
+func (g *RouterGroup) Use(middleware ...simplehttp.Middleware) {
 	g.middleware = append(g.middleware, middleware...)
 }

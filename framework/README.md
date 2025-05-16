@@ -1,14 +1,14 @@
 # Framework Implementation Guide
 
-This guide explains how to implement support for a new web framework in MedaHTTP. The abstraction layer is designed to make it easy to add new frameworks while maintaining a consistent API.
+This guide explains how to implement support for a new web framework in SimpleHTTP. The abstraction layer is designed to make it easy to add new frameworks while maintaining a consistent API.
 
 ## Implementation Structure
 
 To implement a new framework, you need to create three main components:
 
-1. **Server**: Implements the `MedaServer` interface
-2. **Context**: Implements the `MedaContext` interface
-3. **Adapter**: Converts between MedaHTTP and the framework's handlers
+1. **Server**: Implements the SimpleHttp `Server` interface
+2. **Context**: Implements the SimpleHttp `Context` interface
+3. **Adapter**: Converts between SimpleHttpHTTP and the framework's handlers
 
 ## Step-by-Step Guide
 
@@ -20,14 +20,14 @@ Let's walk through implementing support for a new framework (e.g., Gin):
 simplehttp/
   ├── framework/
       ├── gin/
-          ├── server.go    # MedaServer implementation
-          ├── context.go   # MedaContext implementation
+          ├── server.go    # SimpleHttp Server implementation
+          ├── context.go   # SimpleHttp Context implementation
           ├── adapter.go   # Adapter functions
 ```
 
 ### 2. Implement the Context
 
-The context is the core of your implementation. It wraps the framework's native context and provides the methods defined in the `MedaContext` interface.
+The context is the core of your implementation. It wraps the framework's native context and provides the methods defined in the SimpleHttp `Context` interface.
 
 ```go
 // framework/gin/context.go
@@ -55,7 +55,7 @@ func NewContext(c *gin.Context) *GinContext {
     }
 }
 
-// Implement all methods from MedaContext interface
+// Implement all methods from SimpleHttp Context interface
 func (c *GinContext) GetPath() string {
     return c.ctx.FullPath()
 }
@@ -131,7 +131,7 @@ func (c *GinContext) SetContext(ctx context.Context) {
 
 ### 3. Implement the Adapter
 
-The adapter converts between MedaHTTP handlers and the framework's native handlers.
+The adapter converts between SimpleHTTP handlers and the framework's native handlers.
 
 ```go
 // framework/gin/adapter.go
@@ -142,8 +142,8 @@ import (
     "github.com/medatechnology/simplehttp"
 )
 
-// Adapter converts MedaHandlerFunc to gin.HandlerFunc
-func Adapter(handler simplehttp.MedaHandlerFunc) gin.HandlerFunc {
+// Adapter converts SimpleHTTP HandlerFunc to gin.HandlerFunc
+func Adapter(handler simplehttp.HandlerFunc) gin.HandlerFunc {
     return func(c *gin.Context) {
         ctx := NewContext(c)
         if err := handler(ctx); err != nil {
@@ -154,7 +154,7 @@ func Adapter(handler simplehttp.MedaHandlerFunc) gin.HandlerFunc {
 
 // handleError processes errors and sends appropriate responses
 func handleError(c *GinContext, err error) {
-    if medaErr, ok := err.(*simplehttp.MedaError); ok {
+    if medaErr, ok := err.(*simplehttp.SimpleHttpError); ok {
         c.ctx.JSON(medaErr.Code, medaErr)
     } else {
         c.ctx.JSON(500, map[string]string{"error": err.Error()})
@@ -162,10 +162,10 @@ func handleError(c *GinContext, err error) {
 }
 
 // Optional: middleware adapter
-func MiddlewareAdapter(middleware simplehttp.MedaMiddlewareFunc) gin.HandlerFunc {
+func MiddlewareAdapter(middleware simplehttp.MiddlewareFunc) gin.HandlerFunc {
     return func(c *gin.Context) {
         ctx := NewContext(c)
-        err := middleware(func(medaCtx simplehttp.MedaContext) error {
+        err := middleware(func(medaCtx simplehttp.Context) error {
             c.Next()
             return nil
         })(ctx)
@@ -179,7 +179,7 @@ func MiddlewareAdapter(middleware simplehttp.MedaMiddlewareFunc) gin.HandlerFunc
 
 ### 4. Implement the Server
 
-The server implements the `MedaServer` interface and manages the lifecycle of the web application.
+The server implements the `SimpleHttp Server` interface and manages the lifecycle of the web application.
 
 ```go
 // framework/gin/server.go
@@ -196,7 +196,7 @@ import (
 type Server struct {
     engine     *gin.Engine
     config     *simplehttp.Config
-    middleware []simplehttp.MedaMiddleware
+    middleware []simplehttp.Middleware
     mu         sync.RWMutex
 }
 
@@ -221,26 +221,26 @@ func NewServer(config *simplehttp.Config) *Server {
 }
 
 // Apply middleware to a handler
-func (s *Server) applyMiddleware(handler simplehttp.MedaHandlerFunc) simplehttp.MedaHandlerFunc {
+func (s *Server) applyMiddleware(handler simplehttp.HandlerFunc) simplehttp.HandlerFunc {
     for i := len(s.middleware) - 1; i >= 0; i-- {
         handler = s.middleware[i].Handle(handler)
     }
     return handler
 }
 
-// Implement all methods from MedaRouter interface
-func (s *Server) GET(path string, handler simplehttp.MedaHandlerFunc) {
+// Implement all methods from SimpleHTTP Router interface
+func (s *Server) GET(path string, handler simplehttp.HandlerFunc) {
     s.engine.GET(path, Adapter(s.applyMiddleware(handler)))
 }
 
-func (s *Server) POST(path string, handler simplehttp.MedaHandlerFunc) {
+func (s *Server) POST(path string, handler simplehttp.HandlerFunc) {
     s.engine.POST(path, Adapter(s.applyMiddleware(handler)))
 }
 
 // Implement remaining HTTP methods...
 
 // Implement Group
-func (s *Server) Group(prefix string) simplehttp.MedaRouter {
+func (s *Server) Group(prefix string) simplehttp.Router {
     return &RouterGroup{
         prefix: prefix,
         server: s,
@@ -248,7 +248,7 @@ func (s *Server) Group(prefix string) simplehttp.MedaRouter {
 }
 
 // Implement Use
-func (s *Server) Use(middleware ...simplehttp.MedaMiddleware) {
+func (s *Server) Use(middleware ...simplehttp.Middleware) {
     s.mu.Lock()
     defer s.mu.Unlock()
     s.middleware = append(s.middleware, middleware...)
@@ -281,7 +281,7 @@ func (s *Server) StaticFile(path, filepath string) {
 }
 
 // Implement WebSocket (this would depend on your WebSocket integration)
-func (s *Server) WebSocket(path string, handler func(simplehttp.MedaWebsocket) error) {
+func (s *Server) WebSocket(path string, handler func(simplehttp.WebSocket) error) {
     // Implementation depends on the WebSocket library you use with Gin
 }
 
@@ -291,8 +291,8 @@ type RouterGroup struct {
     server *Server
 }
 
-// Implement all MedaRouter methods for RouterGroup...
-func (g *RouterGroup) GET(path string, handler simplehttp.MedaHandlerFunc) {
+// Implement all SimpleHTTP Router methods for RouterGroup...
+func (g *RouterGroup) GET(path string, handler simplehttp.HandlerFunc) {
     g.server.GET(g.prefix+path, handler)
 }
 
@@ -301,7 +301,7 @@ func (g *RouterGroup) GET(path string, handler simplehttp.MedaHandlerFunc) {
 
 ### 5. WebSocket Implementation
 
-If your framework supports WebSockets, you'll need to implement the `MedaWebsocket` interface as well:
+If your framework supports WebSockets, you'll need to implement the SimpleHTTP `Websocket` interface as well:
 
 ```go
 // framework/gin/websocket.go (or include in context.go)
@@ -312,7 +312,7 @@ import (
     "github.com/medatechnology/simplehttp"
 )
 
-// GinWebSocket implements the MedaWebsocket interface
+// GinWebSocket implements the SimpleHTTP Websocket interface
 type GinWebSocket struct {
     conn *websocket.Conn
 }
@@ -366,7 +366,7 @@ func main() {
         simplehttp.MiddlewareLogger(simplehttp.NewDefaultLogger()),
     )
     
-    server.GET("/hello", func(c simplehttp.MedaContext) error {
+    server.GET("/hello", func(c simplehttp.Context) error {
         return c.JSON(http.StatusOK, map[string]string{
             "message": "Hello from Gin implementation!",
         })
@@ -382,7 +382,7 @@ func main() {
 
 1. **Follow Existing Patterns**: Review the existing implementations to maintain consistency
 2. **Complete Implementation**: Ensure all methods of the interfaces are implemented
-3. **Error Handling**: Properly convert between framework-specific errors and MedaHTTP errors
+3. **Error Handling**: Properly convert between framework-specific errors and SimpleHTTP errors
 4. **Default Configuration**: Provide sensible defaults for all framework-specific settings
 5. **Documentation**: Add framework-specific notes to your implementation
 
@@ -392,4 +392,4 @@ func main() {
 2. Create tests for your implementation
 3. Submit a pull request with your changes
 
-By following this guide, you should be able to implement support for any web framework in MedaHTTP.
+By following this guide, you should be able to implement support for any web framework in SimpleHTTP.

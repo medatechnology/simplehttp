@@ -18,7 +18,9 @@ const (
 	LogLevelFatal
 
 	DEFAULT_LOG_TIME_FORMAT = "2006/01/02 15:04:05"
-	DEFAULT_LOG_PREFIX      = "[MEDA] "
+	DEFAULT_LOG_PREFIX      = "[HTTP] "
+	DEFAULT_AFTER_HANDLER   = true
+	DEFAULT_BEFORE_HANDLER  = false
 )
 
 // Logger interface for all logging operations
@@ -35,9 +37,12 @@ type Logger interface {
 	Errorf(format string, v ...interface{})
 	Fatal(v ...interface{})
 	Fatalf(format string, v ...interface{})
+	IsBeforeHandler() bool
+	IsAfterHandler() bool
+	IsPrintRequestID() bool
 }
 
-func MiddlewareLogger(log Logger) MedaMiddleware {
+func MiddlewareLogger(log Logger) Middleware {
 	return WithName("logger", SimpleLog(log))
 }
 
@@ -45,31 +50,38 @@ func MiddlewareLogger(log Logger) MedaMiddleware {
 // [prefix] INFO [date] [time] [rid] --Started [method] [path]
 // [prefix] INFO [date] [time] [rid] Completed [method] [path] [duration]
 // [prefix] INFO [date] [time] [rid] Failed [method] [path] [error] [duration]
-func SimpleLog(log Logger) MedaMiddlewareFunc {
-	return func(next MedaHandlerFunc) MedaHandlerFunc {
-		return func(c MedaContext) error {
+func SimpleLog(log Logger) MiddlewareFunc {
+	return func(next HandlerFunc) HandlerFunc {
+		return func(c Context) error {
 			start := time.Now()
 
 			// Get request ID from headers or generate new one
 			requestID := c.GetHeader(HEADER_REQUEST_ID)
-			if requestID == "" {
-				// requestID = GenerateRequestID()
-				requestID = "no-ID"
+			if log.IsPrintRequestID() {
+				if requestID == "" {
+					// requestID = GenerateRequestID()
+					requestID = "no-ID"
+				}
+			} else {
+				requestID = ""
 			}
 
 			// Log request
-			log.Printf("%s --Started %s %s", requestID, c.GetMethod(), c.GetPath())
-
+			if log.IsBeforeHandler() {
+				log.Printf("%s --Started %s %s", requestID, c.GetMethod(), c.GetPath())
+			}
 			err := next(c)
 
 			// Log response
-			duration := time.Since(start)
-			if err != nil {
-				log.Errorf("%s Failed %s %s - %v (%s)",
-					requestID, c.GetMethod(), c.GetPath(), err, duration)
-			} else {
-				log.Printf("%s Completed %s %s (%s)",
-					requestID, c.GetMethod(), c.GetPath(), duration)
+			if log.IsAfterHandler() {
+				duration := time.Since(start)
+				if err != nil {
+					log.Errorf("%s Failed %s %s - %v (%s)",
+						requestID, c.GetMethod(), c.GetPath(), err, duration)
+				} else {
+					log.Printf("%s Completed %s %s (%s)",
+						requestID, c.GetMethod(), c.GetPath(), duration)
+				}
 			}
 
 			return err
@@ -86,6 +98,8 @@ type DefaultLogger struct {
 
 type DefaultLoggerConfig struct {
 	Level          LogLevel // this is the minimum to print out at this log
+	BeforeHandler  bool
+	AfterHandler   bool
 	TimeFormat     string
 	Prefix         string
 	Output         io.Writer
@@ -99,10 +113,12 @@ func NewDefaultLogger(config ...*DefaultLoggerConfig) Logger {
 		cfg = config[0]
 	} else {
 		cfg = &DefaultLoggerConfig{
-			Level:      LogLevelInfo, // this is the default, is not DEBUG
-			TimeFormat: DEFAULT_LOG_TIME_FORMAT,
-			Output:     os.Stdout,
-			Prefix:     DEFAULT_LOG_PREFIX,
+			Level:         LogLevelInfo, // this is the default, is not DEBUG
+			TimeFormat:    DEFAULT_LOG_TIME_FORMAT,
+			BeforeHandler: DEFAULT_BEFORE_HANDLER,
+			AfterHandler:  DEFAULT_AFTER_HANDLER,
+			Output:        os.Stdout,
+			Prefix:        DEFAULT_LOG_PREFIX,
 		}
 	}
 
@@ -196,6 +212,19 @@ func (l *DefaultLogger) Fatalf(format string, v ...interface{}) {
 	if l.level <= LogLevelFatal {
 		l.logger.Fatal("FATAL", l.formatMessagef(format, v...))
 	}
+}
+
+// Getter
+func (l *DefaultLogger) IsBeforeHandler() bool {
+	return l.config.BeforeHandler
+}
+
+func (l *DefaultLogger) IsAfterHandler() bool {
+	return l.config.AfterHandler
+}
+
+func (l *DefaultLogger) IsPrintRequestID() bool {
+	return l.config.PrintRequestID
 }
 
 // Example usage:

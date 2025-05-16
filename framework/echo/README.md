@@ -46,13 +46,13 @@ func main() {
     }
 }
 
-func handleHome(c simplehttp.MedaContext) error {
+func handleHome(c simplehttp.Context) error {
     return c.JSON(200, map[string]string{
-        "message": "Welcome to MedaHTTP with Echo!",
+        "message": "Welcome to SimpleHTTP with Echo!",
     })
 }
 
-func handleCreateUser(c simplehttp.MedaContext) error {
+func handleCreateUser(c simplehttp.Context) error {
     var user struct {
         Name  string `json:"name"`
         Email string `json:"email"`
@@ -84,7 +84,7 @@ import (
 )
 
 type App struct {
-    server simplehttp.MedaServer
+    server simplehttp.Server
     logger simplehttp.Logger
 }
 
@@ -130,7 +130,7 @@ func (app *App) setupMiddleware() {
         simplehttp.RateLimiter(simplehttp.RateLimitConfig{
             RequestsPerSecond: 10,
             BurstSize:        20,
-            KeyFunc: func(c simplehttp.MedaContext) string {
+            KeyFunc: func(c simplehttp.Context) string {
                 return c.GetHeader("X-Real-IP")
             },
         }),
@@ -169,7 +169,7 @@ func (app *App) setupRoutes() {
     app.server.WebSocket("/ws", app.handleWebSocket)
 }
 
-func (app *App) handleListUsers(c simplehttp.MedaContext) error {
+func (app *App) handleListUsers(c simplehttp.Context) error {
     users := []map[string]string{
         {"id": "1", "name": "John Doe"},
         {"id": "2", "name": "Jane Doe"},
@@ -177,7 +177,7 @@ func (app *App) handleListUsers(c simplehttp.MedaContext) error {
     return c.JSON(200, users)
 }
 
-func (app *App) handleCreateUser(c simplehttp.MedaContext) error {
+func (app *App) handleCreateUser(c simplehttp.Context) error {
     var user struct {
         Name  string `json:"name"`
         Email string `json:"email"`
@@ -196,7 +196,7 @@ func (app *App) handleCreateUser(c simplehttp.MedaContext) error {
     return c.JSON(201, user)
 }
 
-func (app *App) handleGetUser(c simplehttp.MedaContext) error {
+func (app *App) handleGetUser(c simplehttp.Context) error {
     id := c.GetQueryParam("id")
     user := map[string]string{
         "id":    id,
@@ -206,7 +206,7 @@ func (app *App) handleGetUser(c simplehttp.MedaContext) error {
     return c.JSON(200, user)
 }
 
-func (app *App) handleWebSocket(ws simplehttp.MedaWebsocket) error {
+func (app *App) handleWebSocket(ws simplehttp.WebSocket) error {
     for {
         var msg struct {
             Type    string `json:"type"`
@@ -259,7 +259,7 @@ When using the Echo implementation:
 
 3. **WebSocket**: The Echo implementation uses gorilla/websocket internally:
    ```go
-   server.WebSocket("/ws", func(ws simplehttp.MedaWebsocket) error {
+   server.WebSocket("/ws", func(ws simplehttp.WebSocket) error {
        // WebSocket connection handler
    })
    ```
@@ -286,7 +286,7 @@ func TestEchoServer(t *testing.T) {
     server := echo.NewServer(config)
     
     // Add test route
-    server.GET("/test", func(c simplehttp.MedaContext) error {
+    server.GET("/test", func(c simplehttp.Context) error {
         return c.JSON(200, map[string]string{"message": "success"})
     })
     
@@ -307,9 +307,9 @@ func TestEchoServer(t *testing.T) {
 
 1. **Configuration**: Always use environment variables for configuration:
    ```bash
-   export MEDA_FRAMEWORK=echo
-   export MEDA_PORT=8080
-   export MEDA_READ_TIMEOUT=30
+   export SIMPLEHTTP_FRAMEWORK=echo
+   export SIMPLEHTTP_PORT=8080
+   export SIMPLEHTTP_READ_TIMEOUT=30
    ```
 
 2. **Middleware Order**: Consider the order of middleware:

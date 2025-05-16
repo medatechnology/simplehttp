@@ -33,8 +33,8 @@ func NewFileHandler(uploadDir string) *FileHandler {
 
 // This is independent of implementation
 // Make sure the implementation context has .GetFile and .SaveFile
-func (h *FileHandler) HandleUpload() MedaHandlerFunc {
-	return func(c MedaContext) error {
+func (h *FileHandler) HandleUpload() HandlerFunc {
+	return func(c Context) error {
 		file, err := c.GetFile("file")
 		if err != nil {
 			return c.JSON(400, map[string]string{"error": "file required"})
@@ -61,8 +61,8 @@ func (h *FileHandler) HandleUpload() MedaHandlerFunc {
 	}
 }
 
-func (h *FileHandler) HandleDownload(filepath string) MedaHandlerFunc {
-	return func(c MedaContext) error {
+func (h *FileHandler) HandleDownload(filepath string) HandlerFunc {
+	return func(c Context) error {
 		return c.SendFile(filepath, true)
 	}
 }

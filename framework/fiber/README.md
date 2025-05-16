@@ -1,6 +1,6 @@
-# MedaHTTP
+# SimpleHTTP
 
-MedaHTTP is a flexible HTTP handler interface for Go that provides a unified abstraction layer for multiple web frameworks. It allows you to write web applications that can seamlessly switch between different web framework implementations (Fiber, Echo, Gin, etc.) without changing your application code.
+SimpleHTTP is a flexible HTTP handler interface for Go that provides a unified abstraction layer for multiple web frameworks. It allows you to write web applications that can seamlessly switch between different web framework implementations (Fiber, Echo, Gin, etc.) without changing your application code.
 
 ## Features
 
@@ -44,7 +44,7 @@ func main() {
 	)
 	
 	// Define routes
-	server.GET("/hello", func(c simplehttp.MedaContext) error {
+	server.GET("/hello", func(c simplehttp.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{
 			"message": "Hello, World!",
 		})
@@ -59,19 +59,19 @@ func main() {
 
 ## Configuration
 
-MedaHTTP can be configured through environment variables:
+SimpleHTTP can be configured through environment variables:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| MEDA_FRAMEWORK | The web framework to use (e.g., "fiber", "echo") | "echo" |
-| MEDA_PORT | The port to listen on | "8080" |
-| MEDA_APP_NAME | Application name | "MedaHTTP" |
-| MEDA_HOST_NAME | Hostname to bind to | "localhost" |
-| MEDA_READ_TIMEOUT | Read timeout in seconds | 30s |
-| MEDA_WRITE_TIMEOUT | Write timeout in seconds | 30s |
-| MEDA_IDLE_TIMEOUT | Idle timeout in seconds | 60s |
-| MEDA_DEBUG | Enable debug mode | false |
-| FRAMEWORK_STARTUP_MESSAGE | Show startup message | true |
+| SIMPLEHTTP_FRAMEWORK | The web framework to use (e.g., "fiber", "echo") | "echo" |
+| SIMPLEHTTP_PORT | The port to listen on | "8080" |
+| SIMPLEHTTP_APP_NAME | Application name | "MedaHTTP" |
+| SIMPLEHTTP_HOST_NAME | Hostname to bind to | "localhost" |
+| SIMPLEHTTP_READ_TIMEOUT | Read timeout in seconds | 30s |
+| SIMPLEHTTP_WRITE_TIMEOUT | Write timeout in seconds | 30s |
+| SIMPLEHTTP_IDLE_TIMEOUT | Idle timeout in seconds | 60s |
+| SIMPLEHTTP_DEBUG | Enable debug mode | false |
+| SIMPLEHTTP_FRAMEWORK_STARTUP_MESSAGE | Show startup message | true |
 
 ## Core Components
 
@@ -161,7 +161,7 @@ server.Use(
 server.Use(simplehttp.MiddlewareRateLimiter(simplehttp.RateLimitConfig{
     RequestsPerSecond: 10,
     BurstSize: 20,
-    KeyFunc: func(c simplehttp.MedaContext) string {
+    KeyFunc: func(c simplehttp.Context) string {
         headers := c.GetHeaders()
         return headers.RealIP // Rate limit by IP
     },
@@ -195,7 +195,7 @@ server.Use(simplehttp.MiddlewareBasicAuth("username", "password"))
 server.Use(simplehttp.MiddlewareCache(simplehttp.CacheConfig{
     TTL: 5 * time.Minute,
     Store: simplehttp.NewMemoryCache(),
-    KeyFunc: func(c simplehttp.MedaContext) string {
+    KeyFunc: func(c simplehttp.Context) string {
         return c.GetPath() + c.GetHeader("Authorization")
     },
 }))
@@ -228,7 +228,7 @@ type Message struct {
     Data string `json:"data"`
 }
 
-server.WebSocket("/ws/chat", func(ws simplehttp.MedaWebsocket) error {
+server.WebSocket("/ws/chat", func(ws simplehttp.WebSocket) error {
     for {
         msg := &Message{}
         if err := ws.ReadJSON(msg); err != nil {
@@ -274,7 +274,7 @@ if err := server.Shutdown(ctx); err != nil {
 
 ## Framework Implementations
 
-MedaHTTP currently includes the following framework implementations:
+SimpleHTTP currently includes the following framework implementations:
 
 - Fiber (`github.com/medatechnology/simplehttp/framework/fiber`)
 

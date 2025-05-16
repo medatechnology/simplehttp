@@ -35,23 +35,23 @@ Create a `.env` file in your project root:
 
 ```
 # Framework to use (echo, fiber, etc.)
-MEDA_FRAMEWORK=echo
+SIMPLEHTTP_FRAMEWORK=echo
 
 # Application settings
-MEDA_APP_NAME=MyAPIService
-MEDA_PORT=8080
-MEDA_HOST_NAME=localhost
+SIMPLEHTTP_APP_NAME=MyAPIService
+SIMPLEHTTP_PORT=8080
+SIMPLEHTTP_HOST_NAME=localhost
 
 # Timeouts in seconds
-MEDA_READ_TIMEOUT=30
-MEDA_WRITE_TIMEOUT=30
-MEDA_IDLE_TIMEOUT=60
+SIMPLEHTTP_READ_TIMEOUT=30
+SIMPLEHTTP_WRITE_TIMEOUT=30
+SIMPLEHTTP_IDLE_TIMEOUT=60
 
 # Debug mode
-MEDA_DEBUG=false
+SIMPLEHTTP_DEBUG=false
 
 # Display startup message
-FRAMEWORK_STARTUP_MESSAGE=true
+SIMPLEHTTP_FRAMEWORK_STARTUP_MESSAGE=true
 ```
 
 ### 2. Create Your First API
@@ -87,13 +87,13 @@ func main() {
     )
 
     // Define routes
-    server.GET("/hello", func(c simplehttp.MedaContext) error {
+    server.GET("/hello", func(c simplehttp.Context) error {
         return c.String(http.StatusOK, "Hello, World!")
     })
 
     api := server.Group("/api")
     {
-        api.GET("/status", func(c simplehttp.MedaContext) error {
+        api.GET("/status", func(c simplehttp.Context) error {
             return c.JSON(http.StatusOK, map[string]string{
                 "status": "running",
                 "version": "1.0.0",
@@ -192,7 +192,7 @@ Parses common HTTP headers into a structured object:
 server.Use(simplehttp.MiddlewareHeaderParser())
 
 // Later in your handler
-func myHandler(c simplehttp.MedaContext) error {
+func myHandler(c simplehttp.Context) error {
     headers := c.GetHeaders()
     
     // Access parsed header data
@@ -232,7 +232,7 @@ Prevents abuse by limiting request frequency:
 rateConfig := simplehttp.RateLimitConfig{
     RequestsPerSecond: 10,         // Allow 10 requests per second
     BurstSize:         20,         // Allow bursts up to 20 requests
-    KeyFunc: func(c simplehttp.MedaContext) string {
+    KeyFunc: func(c simplehttp.Context) string {
         // Rate limit by IP
         headers := c.GetHeaders()
         if headers.RealIP != "" {
@@ -280,7 +280,7 @@ cacheConfig := simplehttp.CacheConfig{
     TTL:       5 * time.Minute,
     KeyPrefix: "api:",
     Store:     simplehttp.NewMemoryCache(),
-    KeyFunc: func(c simplehttp.MedaContext) string {
+    KeyFunc: func(c simplehttp.Context) string {
         // Cache key based on path and auth
         return c.GetPath() + ":" + c.GetHeader("Authorization")
     },
@@ -295,9 +295,9 @@ You can create your own middleware to extend SimpleHttp's functionality:
 ### Example: Request Timer Middleware
 
 ```go
-func RequestTimer() simplehttp.MedaMiddleware {
-    return simplehttp.WithName("request-timer", func(next simplehttp.MedaHandlerFunc) simplehttp.MedaHandlerFunc {
-        return func(c simplehttp.MedaContext) error {
+func RequestTimer() simplehttp.Middleware {
+    return simplehttp.WithName("request-timer", func(next simplehttp.HandlerFunc) simplehttp.HandlerFunc {
+        return func(c simplehttp.Context) error {
             // Start timing
             start := time.Now()
             
@@ -365,7 +365,7 @@ server.GET("/files/:filename", fileHandler.HandleDownload("./uploads/{{filename}
 SimpleHttp has built-in WebSocket support:
 
 ```go
-server.WebSocket("/ws/chat", func(ws simplehttp.MedaWebsocket) error {
+server.WebSocket("/ws/chat", func(ws simplehttp.WebSocket) error {
     for {
         // Read message
         msg := &Message{}
@@ -441,14 +441,14 @@ func main() {
     rateConfig := simplehttp.RateLimitConfig{
         RequestsPerSecond: 10,
         BurstSize:         20,
-        KeyFunc: func(c simplehttp.MedaContext) string {
+        KeyFunc: func(c simplehttp.Context) string {
             headers := c.GetHeaders()
             return headers.RealIP
         },
     }
     
     // Public routes
-    server.GET("/", func(c simplehttp.MedaContext) error {
+    server.GET("/", func(c simplehttp.Context) error {
         return c.String(http.StatusOK, "Welcome to SimpleHttp API")
     })
     
@@ -506,21 +506,21 @@ func main() {
 }
 
 // Handler functions
-func getStatus(c simplehttp.MedaContext) error {
+func getStatus(c simplehttp.Context) error {
     return c.JSON(http.StatusOK, map[string]string{
         "status": "running",
         "version": "1.0.0",
     })
 }
 
-func listUsers(c simplehttp.MedaContext) error {
+func listUsers(c simplehttp.Context) error {
     return c.JSON(http.StatusOK, []map[string]string{
         {"id": "1", "name": "John"},
         {"id": "2", "name": "Jane"},
     })
 }
 
-func createUser(c simplehttp.MedaContext) error {
+func createUser(c simplehttp.Context) error {
     var user struct {
         Name string `json:"name"`
     }
@@ -530,7 +530,7 @@ func createUser(c simplehttp.MedaContext) error {
     return c.JSON(http.StatusCreated, user)
 }
 
-func getUser(c simplehttp.MedaContext) error {
+func getUser(c simplehttp.Context) error {
     id := c.GetQueryParam("id")
     return c.JSON(http.StatusOK, map[string]string{
         "id": id,
@@ -538,7 +538,7 @@ func getUser(c simplehttp.MedaContext) error {
     })
 }
 
-func updateUser(c simplehttp.MedaContext) error {
+func updateUser(c simplehttp.Context) error {
     id := c.GetQueryParam("id")
     var user struct {
         Name string `json:"name"`
@@ -552,20 +552,20 @@ func updateUser(c simplehttp.MedaContext) error {
     })
 }
 
-func deleteUser(c simplehttp.MedaContext) error {
+func deleteUser(c simplehttp.Context) error {
     id := c.GetQueryParam("id")
     return c.JSON(http.StatusOK, map[string]string{
         "message": "User " + id + " deleted",
     })
 }
 
-func adminDashboard(c simplehttp.MedaContext) error {
+func adminDashboard(c simplehttp.Context) error {
     return c.JSON(http.StatusOK, map[string]string{
         "message": "Admin dashboard",
     })
 }
 
-func handleChat(ws simplehttp.MedaWebsocket) error {
+func handleChat(ws simplehttp.WebSocket) error {
     for {
         msg := struct {
             Type string `json:"type"`
@@ -597,19 +597,19 @@ SimpleHttp can be configured using environment variables. Here's a complete exam
 
 ```
 # Framework configuration
-MEDA_FRAMEWORK=echo              # Framework to use (echo, fiber)
-MEDA_APP_NAME=SimpleHttp-App     # Application name
-MEDA_HOST_NAME=localhost         # Host name
-MEDA_PORT=8080                   # Port to listen on
+SIMPLEHTTP_FRAMEWORK=echo              # Framework to use (echo, fiber)
+SIMPLEHTTP_APP_NAME=SimpleHttp-App     # Application name
+SIMPLEHTTP_HOST_NAME=localhost         # Host name
+SIMPLEHTTP_PORT=8080                   # Port to listen on
 
 # Timeout configuration (in seconds)
-MEDA_READ_TIMEOUT=30             # HTTP read timeout
-MEDA_WRITE_TIMEOUT=30            # HTTP write timeout
-MEDA_IDLE_TIMEOUT=60             # HTTP idle timeout
+SIMPLEHTTP_READ_TIMEOUT=30             # HTTP read timeout
+SIMPLEHTTP_WRITE_TIMEOUT=30            # HTTP write timeout
+SIMPLEHTTP_IDLE_TIMEOUT=60             # HTTP idle timeout
 
 # Debug and logging
-MEDA_DEBUG=false                 # Debug mode
-FRAMEWORK_STARTUP_MESSAGE=true   # Display startup message
+SIMPLEHTTP_DEBUG=false                 # Debug mode
+SIMPLEHTTP_FRAMEWORK_STARTUP_MESSAGE=true   # Display startup message
 ```
 
 ## Middleware Order

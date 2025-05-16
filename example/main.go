@@ -31,7 +31,7 @@ func main() {
 	// Test SimpleHTTP
 	utils.LoadEnv("./example/.env.example")
 	config := simplehttp.LoadConfig()
-	// var server simplehttp.MedaServer
+	// var server simplehttp.SimpleHttpServer
 	// server := echo.NewServer(config)
 	server := fiber.NewServer(config)
 
@@ -40,13 +40,13 @@ func main() {
 
 }
 
-func TestSimpleHTTP(server simplehttp.MedaServer, config *simplehttp.Config) {
+func TestSimpleHTTP(server simplehttp.Server, config *simplehttp.Config) {
 	// Load configuration
 	// Usually is run from the root directory like: go run ./simplehttp/example...
 	// so reading the env also like that
 	// goutil.LoadEnv("./simplehttp/example/.env.example")
 	// config := simplehttp.LoadConfig()
-	// var server simplehttp.MedaServer
+	// var server simplehttp.Server
 
 	// Create server
 	// server = echo.NewServer(config)
@@ -77,7 +77,7 @@ func TestSimpleHTTP(server simplehttp.MedaServer, config *simplehttp.Config) {
 			users.DELETE("/:id", deleteUser)
 		}
 
-		api.GET("/status", func(c simplehttp.MedaContext) error {
+		api.GET("/status", func(c simplehttp.Context) error {
 			headers := c.GetHeaders()
 			rid := c.GetHeader(simplehttp.HEADER_REQUEST_ID)
 			fmt.Println("--API - get rid = [", rid, "], from Headers=[", headers.RequestID, "]")
@@ -97,7 +97,7 @@ func TestSimpleHTTP(server simplehttp.MedaServer, config *simplehttp.Config) {
 	}
 }
 
-func TestFullUsage(server simplehttp.MedaServer, config *simplehttp.Config) {
+func TestFullUsage(server simplehttp.Server, config *simplehttp.Config) {
 	// Test stop watch as well
 	// swatch := metrics.StartTimeIt("Loading", 50)
 
@@ -118,7 +118,7 @@ func TestFullUsage(server simplehttp.MedaServer, config *simplehttp.Config) {
 	rateConfig := simplehttp.RateLimitConfig{
 		RequestsPerSecond: 10,
 		BurstSize:         20,
-		KeyFunc: func(c simplehttp.MedaContext) string {
+		KeyFunc: func(c simplehttp.Context) string {
 			header := c.GetHeaders()
 			if header.RealIP != "" {
 				return header.RealIP
@@ -133,12 +133,12 @@ func TestFullUsage(server simplehttp.MedaServer, config *simplehttp.Config) {
 	// 	TTL:       time.Minute * 5,
 	// 	KeyPrefix: "cache:",
 	// 	Store:     simplehttp.NewMemoryCache(),
-	// 	KeyFunc: func(c simplehttp.MedaContext) string {
+	// 	KeyFunc: func(c simplehttp.Context) string {
 	// 		return c.GetPath() + c.GetHeader("Authorization")
 	// 	},
 	// }
 	// Setup logging
-	logger := log.New(os.Stdout, "MEDA", log.LstdFlags)
+	logger := log.New(os.Stdout, "SIMPLEHTTP", log.LstdFlags)
 
 	server.Use(
 		// simplehttp.MiddlewareLogger(simplehttp.NewDefaultLogger()),
@@ -168,14 +168,14 @@ func TestFullUsage(server simplehttp.MedaServer, config *simplehttp.Config) {
 
 	api := server.Group("/api")
 	{
-		api.GET("/users", func(c simplehttp.MedaContext) error {
+		api.GET("/users", func(c simplehttp.Context) error {
 			return c.JSON(200, []map[string]string{
 				{"id": "1", "name": "John"},
 				{"id": "2", "name": "Jane"},
 			})
 		})
 
-		api.GET("/status", func(c simplehttp.MedaContext) error {
+		api.GET("/status", func(c simplehttp.Context) error {
 			headers := c.GetHeaders()
 			// rid := c.GetHeader(simplehttp.HEADER_REQUEST_ID)
 			// fmt.Println("--API - get rid = ", rid)
@@ -188,12 +188,12 @@ func TestFullUsage(server simplehttp.MedaServer, config *simplehttp.Config) {
 			})
 		})
 
-		api.GET("/header", func(c simplehttp.MedaContext) error {
+		api.GET("/header", func(c simplehttp.Context) error {
 			headers := c.GetHeaders()
 			return c.JSON(http.StatusOK, headers)
 		})
 
-		api.POST("/users", func(c simplehttp.MedaContext) error {
+		api.POST("/users", func(c simplehttp.Context) error {
 			var user struct {
 				Name string `json:"name"`
 			}
@@ -217,7 +217,7 @@ func TestFullUsage(server simplehttp.MedaServer, config *simplehttp.Config) {
 	}
 
 	// Websocket chat example
-	server.WebSocket("/ws/chat", func(ws simplehttp.MedaWebsocket) error {
+	server.WebSocket("/ws/chat", func(ws simplehttp.Websocket) error {
 		for {
 			msg := &Message{}
 			if err := ws.ReadJSON(msg); err != nil {

@@ -204,7 +204,7 @@ func (c *FHContext) SendFile(filepath string, attachment bool) error {
 	return nil
 }
 
-func (c *FHContext) Upgrade() (simplehttp.MedaWebsocket, error) {
+func (c *FHContext) Upgrade() (simplehttp.Websocket, error) {
 	// TODO: Implement WebSocket upgrade using fasthttp.Upgrader
 	return nil, fmt.Errorf("websocket not implemented for fasthttp")
 }

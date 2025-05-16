@@ -14,11 +14,11 @@ type EchoServer struct {
 	e      *echo.Echo
 	config *simplehttp.Config
 	// router *EchoGroup
-	middleware []simplehttp.MedaMiddleware
+	middleware []simplehttp.Middleware
 	// mu         sync.RWMutex
 }
 
-func NewServer(config *simplehttp.Config) simplehttp.MedaServer {
+func NewServer(config *simplehttp.Config) simplehttp.Server {
 	e := echo.New()
 
 	// Basic middleware setup
@@ -37,31 +37,31 @@ func NewServer(config *simplehttp.Config) simplehttp.MedaServer {
 	}
 }
 
-func (s *EchoServer) GET(path string, handler simplehttp.MedaHandlerFunc) {
+func (s *EchoServer) GET(path string, handler simplehttp.HandlerFunc) {
 	s.e.GET(path, Adapter(handler))
 }
 
-func (s *EchoServer) POST(path string, handler simplehttp.MedaHandlerFunc) {
+func (s *EchoServer) POST(path string, handler simplehttp.HandlerFunc) {
 	s.e.POST(path, Adapter(handler))
 }
 
-func (s *EchoServer) PUT(path string, handler simplehttp.MedaHandlerFunc) {
+func (s *EchoServer) PUT(path string, handler simplehttp.HandlerFunc) {
 	s.e.PUT(path, Adapter(handler))
 }
 
-func (s *EchoServer) DELETE(path string, handler simplehttp.MedaHandlerFunc) {
+func (s *EchoServer) DELETE(path string, handler simplehttp.HandlerFunc) {
 	s.e.DELETE(path, Adapter(handler))
 }
 
-func (s *EchoServer) PATCH(path string, handler simplehttp.MedaHandlerFunc) {
+func (s *EchoServer) PATCH(path string, handler simplehttp.HandlerFunc) {
 	s.e.PATCH(path, Adapter(handler))
 }
 
-func (s *EchoServer) OPTIONS(path string, handler simplehttp.MedaHandlerFunc) {
+func (s *EchoServer) OPTIONS(path string, handler simplehttp.HandlerFunc) {
 	s.e.OPTIONS(path, Adapter(handler))
 }
 
-func (s *EchoServer) HEAD(path string, handler simplehttp.MedaHandlerFunc) {
+func (s *EchoServer) HEAD(path string, handler simplehttp.HandlerFunc) {
 	s.e.HEAD(path, Adapter(handler))
 }
 
@@ -73,7 +73,7 @@ func (s *EchoServer) StaticFile(path, filepath string) {
 	s.e.FileFS(path, filepath, nil)
 }
 
-func (s *EchoServer) WebSocket(path string, handler func(simplehttp.MedaWebsocket) error) {
+func (s *EchoServer) WebSocket(path string, handler func(simplehttp.Websocket) error) {
 	s.e.GET(path, func(c echo.Context) error {
 		echoCtx := NewEchoContext(c, s.config)
 		ws, err := echoCtx.Upgrade()
@@ -84,12 +84,12 @@ func (s *EchoServer) WebSocket(path string, handler func(simplehttp.MedaWebsocke
 	})
 }
 
-func (s *EchoServer) Group(prefix string) simplehttp.MedaRouter {
+func (s *EchoServer) Group(prefix string) simplehttp.Router {
 	group := s.e.Group(prefix)
 	return &EchoGroup{group: group, config: s.config}
 }
 
-func (s *EchoServer) Use(middleware ...simplehttp.MedaMiddleware) {
+func (s *EchoServer) Use(middleware ...simplehttp.Middleware) {
 	for _, m := range middleware {
 		s.e.Use(MiddlewareAdapter(m.Handle))
 	}
@@ -111,31 +111,31 @@ type EchoGroup struct {
 	config *simplehttp.Config
 }
 
-func (g *EchoGroup) GET(path string, handler simplehttp.MedaHandlerFunc) {
+func (g *EchoGroup) GET(path string, handler simplehttp.HandlerFunc) {
 	g.group.GET(path, Adapter(handler))
 }
 
-func (g *EchoGroup) POST(path string, handler simplehttp.MedaHandlerFunc) {
+func (g *EchoGroup) POST(path string, handler simplehttp.HandlerFunc) {
 	g.group.POST(path, Adapter(handler))
 }
 
-func (g *EchoGroup) PUT(path string, handler simplehttp.MedaHandlerFunc) {
+func (g *EchoGroup) PUT(path string, handler simplehttp.HandlerFunc) {
 	g.group.PUT(path, Adapter(handler))
 }
 
-func (g *EchoGroup) DELETE(path string, handler simplehttp.MedaHandlerFunc) {
+func (g *EchoGroup) DELETE(path string, handler simplehttp.HandlerFunc) {
 	g.group.DELETE(path, Adapter(handler))
 }
 
-func (g *EchoGroup) PATCH(path string, handler simplehttp.MedaHandlerFunc) {
+func (g *EchoGroup) PATCH(path string, handler simplehttp.HandlerFunc) {
 	g.group.PATCH(path, Adapter(handler))
 }
 
-func (g *EchoGroup) OPTIONS(path string, handler simplehttp.MedaHandlerFunc) {
+func (g *EchoGroup) OPTIONS(path string, handler simplehttp.HandlerFunc) {
 	g.group.OPTIONS(path, Adapter(handler))
 }
 
-func (g *EchoGroup) HEAD(path string, handler simplehttp.MedaHandlerFunc) {
+func (g *EchoGroup) HEAD(path string, handler simplehttp.HandlerFunc) {
 	g.group.HEAD(path, Adapter(handler))
 }
 
@@ -147,7 +147,7 @@ func (g *EchoGroup) StaticFile(path, filepath string) {
 	g.group.FileFS(path, filepath, nil)
 }
 
-func (g *EchoGroup) WebSocket(path string, handler func(simplehttp.MedaWebsocket) error) {
+func (g *EchoGroup) WebSocket(path string, handler func(simplehttp.Websocket) error) {
 	g.group.GET(path, func(c echo.Context) error {
 		medaCtx := NewEchoContext(c, g.config)
 		ws, err := medaCtx.Upgrade()
@@ -158,12 +158,12 @@ func (g *EchoGroup) WebSocket(path string, handler func(simplehttp.MedaWebsocket
 	})
 }
 
-func (g *EchoGroup) Group(prefix string) simplehttp.MedaRouter {
+func (g *EchoGroup) Group(prefix string) simplehttp.Router {
 	subgroup := g.group.Group(prefix)
 	return &EchoGroup{group: subgroup, config: g.config}
 }
 
-func (g *EchoGroup) Use(middleware ...simplehttp.MedaMiddleware) {
+func (g *EchoGroup) Use(middleware ...simplehttp.Middleware) {
 	for _, m := range middleware {
 		g.group.Use(MiddlewareAdapter(m.Handle))
 	}

@@ -27,7 +27,7 @@ func SimpleEchoExample() {
 
 	// Use middleware and routes
 	server.Use(simplehttp.MiddlewareLogger(config.Logger))
-	server.GET("/", func(c simplehttp.MedaContext) error {
+	server.GET("/", func(c simplehttp.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
 	})
 
@@ -58,7 +58,7 @@ func ExampleFullUsage() {
 	server := echo.NewServer(config)
 
 	// Setup logging
-	logger := log.New(os.Stdout, "[MEDA] ", log.LstdFlags)
+	logger := log.New(os.Stdout, "[SIMPLEHTTP] ", log.LstdFlags)
 
 	// Add standard middleware
 	server.Use(
@@ -84,7 +84,7 @@ func ExampleFullUsage() {
 	api.GET("/files/:filename", fileHandler.HandleDownload("./uploads/{{filename}}"))
 
 	// Websocket chat example
-	server.WebSocket("/ws/chat", func(ws simplehttp.MedaWebsocket) error {
+	server.WebSocket("/ws/chat", func(ws simplehttp.Websocket) error {
 		for {
 			msg := &Message{}
 			if err := ws.ReadJSON(msg); err != nil {
@@ -138,7 +138,7 @@ func SimpleEchoMain() {
 	// 	log.Fatal(err)
 	// }
 
-	server.GET("/hello", func(c simplehttp.MedaContext) error {
+	server.GET("/hello", func(c simplehttp.Context) error {
 		return c.JSON(200, map[string]string{"message": "Hello World!"})
 	})
 
@@ -173,7 +173,7 @@ func SimpleEchoMain() {
 		simplehttp.MiddlewareRateLimiter(simplehttp.RateLimitConfig{
 			RequestsPerSecond: 10,
 			BurstSize:         20,
-			KeyFunc: func(c simplehttp.MedaContext) string {
+			KeyFunc: func(c simplehttp.Context) string {
 				return c.GetHeader("X-Real-IP")
 			},
 		}),
@@ -181,7 +181,7 @@ func SimpleEchoMain() {
 			TTL:       time.Minute * 5,
 			KeyPrefix: "cache:",
 			Store:     simplehttp.NewMemoryCache(),
-			KeyFunc: func(c simplehttp.MedaContext) string {
+			KeyFunc: func(c simplehttp.Context) string {
 				return c.GetPath() + c.GetHeader("Authorization")
 			},
 		}),
@@ -190,14 +190,14 @@ func SimpleEchoMain() {
 	// API routes with middleware applied
 	api := serverWithMiddleware.Group("/api")
 	{
-		api.GET("/users", func(c simplehttp.MedaContext) error {
+		api.GET("/users", func(c simplehttp.Context) error {
 			return c.JSON(200, []map[string]string{
 				{"id": "1", "name": "John"},
 				{"id": "2", "name": "Jane"},
 			})
 		})
 
-		api.POST("/users", func(c simplehttp.MedaContext) error {
+		api.POST("/users", func(c simplehttp.Context) error {
 			var user struct {
 				Name string `json:"name"`
 			}

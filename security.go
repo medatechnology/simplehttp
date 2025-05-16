@@ -21,14 +21,14 @@ type SecurityConfig struct {
 	ContentSecurityPolicy string
 }
 
-func MiddlewareSecurity(config SecurityConfig) MedaMiddleware {
+func MiddlewareSecurity(config SecurityConfig) Middleware {
 	return WithName("basic security", Security(config))
 }
 
 // Security returns security middleware
-func Security(config SecurityConfig) MedaMiddlewareFunc {
-	return func(next MedaHandlerFunc) MedaHandlerFunc {
-		return func(c MedaContext) error {
+func Security(config SecurityConfig) MiddlewareFunc {
+	return func(next HandlerFunc) HandlerFunc {
+		return func(c Context) error {
 			// fmt.Println("--- security middleware")
 			if config.FrameDeny {
 				c.Response().Header().Set("X-Frame-Options", "DENY")
@@ -64,18 +64,18 @@ type RateLimitConfig struct {
 	RequestsPerSecond int
 	BurstSize         int
 	ClientTimeout     time.Duration
-	KeyFunc           func(MedaContext) string // Function to generate rate limit key
+	KeyFunc           func(Context) string // Function to generate rate limit key
 }
 
-func MiddlewareRateLimiter(config RateLimitConfig) MedaMiddleware {
+func MiddlewareRateLimiter(config RateLimitConfig) Middleware {
 	return WithName("rate limiter", RateLimiter(config))
 }
 
 // RateLimiter returns a rate limiting middleware
-func RateLimiter(config RateLimitConfig) MedaMiddlewareFunc {
+func RateLimiter(config RateLimitConfig) MiddlewareFunc {
 	limiter := newRateLimiter(config)
-	return func(next MedaHandlerFunc) MedaHandlerFunc {
-		return func(c MedaContext) error {
+	return func(next HandlerFunc) HandlerFunc {
+		return func(c Context) error {
 			key := config.KeyFunc(c)
 			if err := limiter.Allow(key); err != nil {
 				return NewError(http.StatusTooManyRequests, "rate limit exceeded")

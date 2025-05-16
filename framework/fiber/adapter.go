@@ -14,8 +14,8 @@ import (
 // 	bindingForm
 // )
 
-// Adapter converts MedaHandlerFunc to fiber.Handler
-func Adapter(handler simplehttp.MedaHandlerFunc) fiber.Handler {
+// Adapter converts SimpleHttpHandlerFunc to fiber.Handler
+func Adapter(handler simplehttp.HandlerFunc) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		ctx := NewContext(c)
 		if err := handler(ctx); err != nil {
@@ -25,11 +25,11 @@ func Adapter(handler simplehttp.MedaHandlerFunc) fiber.Handler {
 	}
 }
 
-// MiddlewareAdapter converts MedaMiddleware to fiber middleware
-func MiddlewareAdapter(middleware simplehttp.MedaMiddlewareFunc) fiber.Handler {
+// MiddlewareAdapter converts SimpleHttpMiddleware to fiber middleware
+func MiddlewareAdapter(middleware simplehttp.MiddlewareFunc) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		ctx := NewContext(c)
-		err := middleware(func(medaCtx simplehttp.MedaContext) error {
+		err := middleware(func(medaCtx simplehttp.Context) error {
 			return c.Next()
 		})(ctx)
 		return err
@@ -38,7 +38,7 @@ func MiddlewareAdapter(middleware simplehttp.MedaMiddlewareFunc) fiber.Handler {
 
 // handleError processes errors and sends appropriate responses
 func handleError(c *FiberContext, err error) error {
-	if medaErr, ok := err.(*simplehttp.MedaError); ok {
+	if medaErr, ok := err.(*simplehttp.SimpleHttpError); ok {
 		return c.JSON(medaErr.Code, medaErr)
 	}
 	return c.JSON(500, map[string]string{"error": err.Error()})

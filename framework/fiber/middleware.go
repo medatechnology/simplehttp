@@ -53,7 +53,6 @@ const (
 
 	// Context keys
 	requestIDContextKey = "requestid"
-	requestIDHeaderKey  = simplehttp.HEADER_REQUEST_ID
 
 	// Cache constants
 	// defaultCacheEnabled = true
@@ -78,6 +77,10 @@ const (
 	// simpleHTTPNextHandlerKey = "meda_next_handler"
 )
 
+var (
+	requestIDHeaderKey = simplehttp.HEADER_REQUEST_ID
+)
+
 // namedMiddleware wraps a Fiber middleware with a name
 type namedMiddleware struct {
 	name       string
@@ -88,8 +91,8 @@ func (m namedMiddleware) Name() string {
 	return m.name
 }
 
-func (m namedMiddleware) Handle(next simplehttp.MedaHandlerFunc) simplehttp.MedaHandlerFunc {
-	return func(c simplehttp.MedaContext) error {
+func (m namedMiddleware) Handle(next simplehttp.HandlerFunc) simplehttp.HandlerFunc {
+	return func(c simplehttp.Context) error {
 		fiberCtx := c.(*FiberContext).ctx
 
 		// Create a wrapper handler that will be called after middleware
@@ -105,7 +108,7 @@ func (m namedMiddleware) Handle(next simplehttp.MedaHandlerFunc) simplehttp.Meda
 }
 
 // RequestID middleware as an example., TODO: Check and test this, last time it wasn't working!
-func MiddlewareRequestID() simplehttp.MedaMiddleware {
+func MiddlewareRequestID() simplehttp.Middleware {
 	return namedMiddleware{
 		name: "request ID",
 		middleware: func(c *fiber.Ctx) error {
@@ -128,7 +131,7 @@ func MiddlewareRequestID() simplehttp.MedaMiddleware {
 }
 
 // Example of another middleware following the same pattern
-func MiddlewareCORS(config *simplehttp.CORSConfig) simplehttp.MedaMiddleware {
+func MiddlewareCORS(config *simplehttp.CORSConfig) simplehttp.Middleware {
 	fiberConfig := cors.Config{
 		AllowOrigins:     defaultCORSAllowOrigins,
 		AllowMethods:     defaultCORSAllowMethods,
@@ -169,7 +172,7 @@ func MiddlewareCORS(config *simplehttp.CORSConfig) simplehttp.MedaMiddleware {
 }
 
 // MiddlewareLogger returns Fiber's logger middleware
-func MiddlewareLogger(log simplehttp.Logger) simplehttp.MedaMiddleware {
+func MiddlewareLogger(log simplehttp.Logger) simplehttp.Middleware {
 	return namedMiddleware{
 		name: "logger",
 		middleware: logger.New(logger.Config{
@@ -181,7 +184,7 @@ func MiddlewareLogger(log simplehttp.Logger) simplehttp.MedaMiddleware {
 }
 
 // MiddlewareCompress returns Fiber's compression middleware
-func MiddlewareCompress(config simplehttp.CompressionConfig) simplehttp.MedaMiddleware {
+func MiddlewareCompress(config simplehttp.CompressionConfig) simplehttp.Middleware {
 	level := defaultCompressLevel
 	if config.Level != 0 {
 		level = config.Level
@@ -196,7 +199,7 @@ func MiddlewareCompress(config simplehttp.CompressionConfig) simplehttp.MedaMidd
 }
 
 // MiddlewareBasicAuth returns Fiber's basic auth middleware
-func MiddlewareBasicAuth(username, password string) simplehttp.MedaMiddleware {
+func MiddlewareBasicAuth(username, password string) simplehttp.Middleware {
 	return namedMiddleware{
 		name: "basic auth",
 		middleware: basicauth.New(basicauth.Config{
@@ -209,7 +212,7 @@ func MiddlewareBasicAuth(username, password string) simplehttp.MedaMiddleware {
 }
 
 // MiddlewareRateLimiter returns Fiber's rate limiter middleware
-func MiddlewareRateLimiter(config simplehttp.RateLimitConfig) simplehttp.MedaMiddleware {
+func MiddlewareRateLimiter(config simplehttp.RateLimitConfig) simplehttp.Middleware {
 	return namedMiddleware{
 		name: "rate limiter",
 		middleware: limiter.New(limiter.Config{
@@ -224,7 +227,7 @@ func MiddlewareRateLimiter(config simplehttp.RateLimitConfig) simplehttp.MedaMid
 }
 
 // MiddlewareSecurity returns Fiber's security middleware (Helmet)
-func MiddlewareSecurity(config simplehttp.SecurityConfig) simplehttp.MedaMiddleware {
+func MiddlewareSecurity(config simplehttp.SecurityConfig) simplehttp.Middleware {
 	xFrameOptions := xFrameOptionsSameOrigin
 	if config.FrameDeny {
 		xFrameOptions = xFrameOptionsDeny
@@ -256,7 +259,7 @@ func MiddlewareSecurity(config simplehttp.SecurityConfig) simplehttp.MedaMiddlew
 }
 
 // MiddlewareCache returns Fiber's cache middleware
-func MiddlewareCache(config simplehttp.CacheConfig) simplehttp.MedaMiddleware {
+func MiddlewareCache(config simplehttp.CacheConfig) simplehttp.Middleware {
 	return namedMiddleware{
 		name: "cache",
 		middleware: cache.New(cache.Config{
@@ -278,7 +281,7 @@ func MiddlewareCache(config simplehttp.CacheConfig) simplehttp.MedaMiddleware {
 }
 
 // MiddlewareRecover returns Fiber's recover middleware
-func MiddlewareRecover() simplehttp.MedaMiddleware {
+func MiddlewareRecover() simplehttp.Middleware {
 	return namedMiddleware{
 		name: "recover",
 		middleware: recover.New(recover.Config{
@@ -288,7 +291,7 @@ func MiddlewareRecover() simplehttp.MedaMiddleware {
 }
 
 // MiddlewareCSRF returns Fiber's CSRF middleware
-func MiddlewareCSRF() simplehttp.MedaMiddleware {
+func MiddlewareCSRF() simplehttp.Middleware {
 	return namedMiddleware{
 		name: "csrf",
 		middleware: csrf.New(csrf.Config{
@@ -302,7 +305,7 @@ func MiddlewareCSRF() simplehttp.MedaMiddleware {
 }
 
 // MiddlewareETag returns Fiber's ETag middleware
-func MiddlewareETag() simplehttp.MedaMiddleware {
+func MiddlewareETag() simplehttp.Middleware {
 	return namedMiddleware{
 		name: "etag",
 		middleware: etag.New(etag.Config{
@@ -312,7 +315,7 @@ func MiddlewareETag() simplehttp.MedaMiddleware {
 }
 
 // MiddlewareMonitor returns Fiber's monitor middleware
-func MiddlewareMonitor() simplehttp.MedaMiddleware {
+func MiddlewareMonitor() simplehttp.Middleware {
 	return namedMiddleware{
 		name:       "monitor",
 		middleware: monitor.New(),

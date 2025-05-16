@@ -10,7 +10,7 @@ var (
 	PathInternalStatus string = DEFAULT_INTERNAL_STATUS
 )
 
-func CreateInternalAPI(s MedaServer) MedaRouter {
+func CreateInternalAPI(s Server) Router {
 	// API routes
 	internalAPI := s.Group(PathInternalAPI)
 	{
@@ -18,7 +18,7 @@ func CreateInternalAPI(s MedaServer) MedaRouter {
 			MiddlewareHeaderParser(),
 		)
 
-		internalAPI.GET(PathInternalStatus, func(c MedaContext) error {
+		internalAPI.GET(PathInternalStatus, func(c Context) error {
 			headers := c.GetHeaders()
 			// rid := c.GetHeader(HEADER_REQUEST_ID)
 			// fmt.Println("--API - get rid = [", rid, "], from Headers=[", headers.RequestID, "]")

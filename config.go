@@ -11,25 +11,25 @@ import (
 
 const (
 	// in seconds, later converted to time.Duration
-	MEDA_DEFAULT_HTTP_READ_TIMEOUT  = 30
-	MEDA_DEFAULT_HTTP_WRITE_TIMEOUT = 30
-	MEDA_DEFAULT_HTTP_IDLE_TIMEOUT  = 60
+	DEFAULT_HTTP_READ_TIMEOUT  = 30
+	DEFAULT_HTTP_WRITE_TIMEOUT = 30
+	DEFAULT_HTTP_IDLE_TIMEOUT  = 60
 
 	// This was used in fiber
-	MEDA_DEFAULT_HTTP_CONCURRENCY = 512 * 1024
+	DEFAULT_HTTP_CONCURRENCY = 512 * 1024
 
 	// environment string
-	MEDA_FRAMEWORK            = "MEDA_FRAMEWORK"
-	MEDA_PORT                 = "MEDA_PORT"
-	MEDA_APP_NAME             = "MEDA_APP_NAME"
-	MEDA_HOST_NAME            = "MEDA_HOST_NAME"
-	MEDA_READ_TIMEOUT         = "MEDA_READ_TIMEOUT"
-	MEDA_WRITE_TIMEOUT        = "MEDA_WRITE_TIMEOUT"
-	MEDA_IDLE_TIMEOUT         = "MEDA_IDLE_TIMEOUT"
-	MEDA_DEBUG                = "MEDA_DEBUG"
-	FRAMEWORK_STARTUP_MESSAGE = "FRAMEWORK_STARTUP_MESSAGE"
-	INTERNAL_API              = "DEFAULT_INTERNAL_API"
-	INTERNAL_STATUS           = "DEFAULT_INTERNAL_STATUS"
+	SIMPLEHTTP_FRAMEWORK                 = "SIMPLEHTTP_FRAMEWORK"
+	SIMPLEHTTP_PORT                      = "SIMPLEHTTP_PORT"
+	SIMPLEHTTP_APP_NAME                  = "SIMPLEHTTP_APP_NAME"
+	SIMPLEHTTP_HOST_NAME                 = "SIMPLEHTTP_HOST_NAME"
+	SIMPLEHTTP_READ_TIMEOUT              = "SIMPLEHTTP_READ_TIMEOUT"
+	SIMPLEHTTP_WRITE_TIMEOUT             = "SIMPLEHTTP_WRITE_TIMEOUT"
+	SIMPLEHTTP_IDLE_TIMEOUT              = "SIMPLEHTTP_IDLE_TIMEOUT"
+	SIMPLEHTTP_DEBUG                     = "SIMPLEHTTP_DEBUG"
+	SIMPLEHTTP_FRAMEWORK_STARTUP_MESSAGE = "SIMPLEHTTP_FRAMEWORK_STARTUP_MESSAGE"
+	SIMPLEHTTP_INTERNAL_API              = "SIMPLEHTTP_INTERNAL_API"
+	SIMPLEHTTP_INTERNAL_STATUS           = "SIMPLEHTTP_INTERNAL_STATUS"
 
 	// internal API (if enabled)
 	DEFAULT_INTERNAL_API    = "/internal_d" // internal debug
@@ -93,7 +93,7 @@ type Config struct {
 	// TODO: Do we need to add other config like security, limiter, timeout, etc?
 
 	// Custom error handlers
-	ErrorHandler func(error, MedaContext) error
+	ErrorHandler func(error, Context) error
 
 	// Additional components
 	Logger Logger // Interface defined in logger.go
@@ -108,37 +108,37 @@ var DefaultConfig = &Config{
 	Hostname:  "localhost",
 	Port:      "8080",
 	ConfigTimeOut: &TimeOutConfig{
-		ReadTimeout:  time.Second * MEDA_DEFAULT_HTTP_READ_TIMEOUT,
-		WriteTimeout: time.Second * MEDA_DEFAULT_HTTP_WRITE_TIMEOUT,
-		IdleTimeout:  time.Second * MEDA_DEFAULT_HTTP_IDLE_TIMEOUT,
+		ReadTimeout:  time.Second * DEFAULT_HTTP_READ_TIMEOUT,
+		WriteTimeout: time.Second * DEFAULT_HTTP_WRITE_TIMEOUT,
+		IdleTimeout:  time.Second * DEFAULT_HTTP_IDLE_TIMEOUT,
 	},
 	MaxHeaderBytes:          1 << 20,  // 1MB
 	MaxRequestSize:          32 << 20, // 32MB
 	Debug:                   false,
 	FrameworkStartupMessage: true,
 	Logger:                  NewDefaultLogger(),
-	Concurrency:             MEDA_DEFAULT_HTTP_CONCURRENCY,
+	Concurrency:             DEFAULT_HTTP_CONCURRENCY,
 	// Cache:          NewMemoryCache(),
 }
 
 // LoadConfig loads configuration from environment variables
 func LoadConfig() *Config {
 	config := &Config{
-		Framework: utils.GetEnvString(MEDA_FRAMEWORK, DefaultConfig.Framework),
-		Port:      utils.GetEnvString(MEDA_PORT, DefaultConfig.Port),
-		AppName:   utils.GetEnvString(MEDA_APP_NAME, DefaultConfig.AppName),
-		Hostname:  utils.GetEnvString(MEDA_HOST_NAME, DefaultConfig.Hostname),
+		Framework: utils.GetEnvString(SIMPLEHTTP_FRAMEWORK, DefaultConfig.Framework),
+		Port:      utils.GetEnvString(SIMPLEHTTP_PORT, DefaultConfig.Port),
+		AppName:   utils.GetEnvString(SIMPLEHTTP_APP_NAME, DefaultConfig.AppName),
+		Hostname:  utils.GetEnvString(SIMPLEHTTP_HOST_NAME, DefaultConfig.Hostname),
 		ConfigTimeOut: &TimeOutConfig{
-			ReadTimeout:  utils.GetEnvDuration(MEDA_READ_TIMEOUT, DefaultConfig.ConfigTimeOut.ReadTimeout),
-			WriteTimeout: utils.GetEnvDuration(MEDA_WRITE_TIMEOUT, DefaultConfig.ConfigTimeOut.WriteTimeout),
-			IdleTimeout:  utils.GetEnvDuration(MEDA_IDLE_TIMEOUT, DefaultConfig.ConfigTimeOut.IdleTimeout),
+			ReadTimeout:  utils.GetEnvDuration(SIMPLEHTTP_READ_TIMEOUT, DefaultConfig.ConfigTimeOut.ReadTimeout),
+			WriteTimeout: utils.GetEnvDuration(SIMPLEHTTP_WRITE_TIMEOUT, DefaultConfig.ConfigTimeOut.WriteTimeout),
+			IdleTimeout:  utils.GetEnvDuration(SIMPLEHTTP_IDLE_TIMEOUT, DefaultConfig.ConfigTimeOut.IdleTimeout),
 		},
-		Debug:                   utils.GetEnvBool(MEDA_DEBUG, DefaultConfig.Debug),
-		FrameworkStartupMessage: utils.GetEnvBool(FRAMEWORK_STARTUP_MESSAGE, DefaultConfig.FrameworkStartupMessage),
+		Debug:                   utils.GetEnvBool(SIMPLEHTTP_DEBUG, DefaultConfig.Debug),
+		FrameworkStartupMessage: utils.GetEnvBool(SIMPLEHTTP_FRAMEWORK_STARTUP_MESSAGE, DefaultConfig.FrameworkStartupMessage),
 		Logger:                  NewDefaultLogger(),
 	}
-	PathInternalAPI = utils.GetEnvString(INTERNAL_API, DEFAULT_INTERNAL_API)
-	PathInternalStatus = utils.GetEnvString(INTERNAL_STATUS, DEFAULT_INTERNAL_STATUS)
+	PathInternalAPI = utils.GetEnvString(SIMPLEHTTP_INTERNAL_API, DEFAULT_INTERNAL_API)
+	PathInternalStatus = utils.GetEnvString(SIMPLEHTTP_INTERNAL_STATUS, DEFAULT_INTERNAL_STATUS)
 	// Set default components if not provided
 	// if config.Logger == nil {
 	// 	config.Logger = NewDefaultLogger()

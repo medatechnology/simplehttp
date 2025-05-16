@@ -19,19 +19,19 @@ type CacheStore interface {
 type CacheConfig struct {
 	TTL           time.Duration
 	KeyPrefix     string
-	KeyFunc       func(MedaContext) string
+	KeyFunc       func(Context) string
 	Store         CacheStore
 	IgnoreHeaders []string
 }
 
-func MiddlewareCache(config CacheConfig) MedaMiddleware {
+func MiddlewareCache(config CacheConfig) Middleware {
 	return WithName("cache", SimpleCache(config))
 }
 
 // SimpleCache returns a caching middleware
-func SimpleCache(config CacheConfig) MedaMiddlewareFunc {
-	return func(next MedaHandlerFunc) MedaHandlerFunc {
-		return func(c MedaContext) error {
+func SimpleCache(config CacheConfig) MiddlewareFunc {
+	return func(next HandlerFunc) HandlerFunc {
+		return func(c Context) error {
 			// fmt.Println("--- cache middleware")
 
 			key := config.KeyFunc(c)

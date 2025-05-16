@@ -24,7 +24,7 @@ type User struct {
 }
 
 // Handler functions
-func getUsers(c simplehttp.MedaContext) error {
+func getUsers(c simplehttp.Context) error {
 	users := []User{
 		{ID: "1", Name: "John Doe"},
 		{ID: "2", Name: "Jane Smith"},
@@ -32,7 +32,7 @@ func getUsers(c simplehttp.MedaContext) error {
 	return c.JSON(http.StatusOK, users)
 }
 
-func getUserByID(c simplehttp.MedaContext) error {
+func getUserByID(c simplehttp.Context) error {
 	id := c.GetQueryParam("id")
 	if id == "" {
 		return simplehttp.NewError(http.StatusBadRequest, "Missing ID parameter")
@@ -43,7 +43,7 @@ func getUserByID(c simplehttp.MedaContext) error {
 	return c.JSON(http.StatusOK, user)
 }
 
-func createUser(c simplehttp.MedaContext) error {
+func createUser(c simplehttp.Context) error {
 	var user User
 	if err := c.BindJSON(&user); err != nil {
 		return simplehttp.NewError(http.StatusBadRequest, "Invalid user data")
@@ -53,7 +53,7 @@ func createUser(c simplehttp.MedaContext) error {
 	return c.JSON(http.StatusCreated, user)
 }
 
-func handleWebSocket(ws simplehttp.MedaWebsocket) error {
+func handleWebSocket(ws simplehttp.WebSocket) error {
 	// Simple chat message type
 	type Message struct {
 		Type string `json:"type"`
@@ -106,7 +106,7 @@ func main() {
 	rateLimitConfig := simplehttp.RateLimitConfig{
 		RequestsPerSecond: 10,
 		BurstSize:         20,
-		KeyFunc: func(c simplehttp.MedaContext) string {
+		KeyFunc: func(c simplehttp.Context) string {
 			headers := c.GetHeaders()
 			return headers.RemoteIP // Rate limit by IP
 		},
@@ -140,7 +140,7 @@ func main() {
 		}
 
 		// Status endpoint
-		api.GET("/status", func(c simplehttp.MedaContext) error {
+		api.GET("/status", func(c simplehttp.Context) error {
 			headers := c.GetHeaders()
 			return c.JSON(http.StatusOK, map[string]interface{}{
 				"status":  "OK",

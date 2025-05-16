@@ -7,8 +7,8 @@ import (
 	"net/http"
 )
 
-// MedaContext represents our framework-agnostic request context
-type MedaContext interface {
+// Context represents our framework-agnostic request context
+type Context interface {
 	// Request information
 	GetPath() string
 	GetMethod() string
@@ -36,7 +36,7 @@ type MedaContext interface {
 	SendFile(filepath string, attachment bool) error
 
 	// Websocket
-	Upgrade() (MedaWebsocket, error)
+	Upgrade() (Websocket, error)
 
 	// Context handling
 	Context() context.Context
@@ -50,8 +50,8 @@ type MedaContext interface {
 	BindForm(interface{}) error
 }
 
-// MedaWebsocket interface for websocket connections
-type MedaWebsocket interface {
+// Websocket interface for websocket connections
+type Websocket interface {
 	WriteJSON(v interface{}) error
 	ReadJSON(v interface{}) error
 	WriteMessage(messageType int, data []byte) error
@@ -59,42 +59,42 @@ type MedaWebsocket interface {
 	Close() error
 }
 
-// MedaHandlerFunc is our framework-agnostic handler function
-type MedaHandlerFunc func(MedaContext) error
+// HandlerFunc is our framework-agnostic handler function
+type HandlerFunc func(Context) error
 
-// MedaMiddlewareFunc defines the contract for middleware
-type MedaMiddlewareFunc func(MedaHandlerFunc) MedaHandlerFunc
+// MiddlewareFunc defines the contract for middleware
+type MiddlewareFunc func(HandlerFunc) HandlerFunc
 
-// Predefined common MedaMiddleware as global variables
-type MedaMiddleware interface {
+// Predefined common Middleware as global variables
+type Middleware interface {
 	Name() string
-	Handle(MedaHandlerFunc) MedaHandlerFunc
+	Handle(HandlerFunc) HandlerFunc
 }
 
-// MedaRouter interface defines common routing operations
-type MedaRouter interface {
-	GET(path string, handler MedaHandlerFunc)
-	POST(path string, handler MedaHandlerFunc)
-	PUT(path string, handler MedaHandlerFunc)
-	DELETE(path string, handler MedaHandlerFunc)
-	PATCH(path string, handler MedaHandlerFunc)
-	OPTIONS(path string, handler MedaHandlerFunc)
-	HEAD(path string, handler MedaHandlerFunc)
+// Router interface defines common routing operations
+type Router interface {
+	GET(path string, handler HandlerFunc)
+	POST(path string, handler HandlerFunc)
+	PUT(path string, handler HandlerFunc)
+	DELETE(path string, handler HandlerFunc)
+	PATCH(path string, handler HandlerFunc)
+	OPTIONS(path string, handler HandlerFunc)
+	HEAD(path string, handler HandlerFunc)
 
 	// Static file serving
 	Static(prefix, root string)
 	StaticFile(path, filepath string)
 
 	// Websocket
-	WebSocket(path string, handler func(MedaWebsocket) error)
+	WebSocket(path string, handler func(Websocket) error)
 
-	Group(prefix string) MedaRouter
-	Use(middleware ...MedaMiddleware)
+	Group(prefix string) Router
+	Use(middleware ...Middleware)
 }
 
-// MedaServer interface defines the contract for our web server
-type MedaServer interface {
-	MedaRouter
+// Server interface defines the contract for our web server
+type Server interface {
+	Router
 	Start(address string) error
 	Shutdown(ctx context.Context) error
 }

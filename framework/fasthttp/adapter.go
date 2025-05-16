@@ -17,8 +17,8 @@ const (
 	bindingForm
 )
 
-// Adapter converts MedaHandlerFunc to fasthttp.RequestHandler
-func Adapter(handler simplehttp.MedaHandlerFunc) fasthttp.RequestHandler {
+// Adapter converts SimpleHttp HandlerFunc to fasthttp.RequestHandler
+func Adapter(handler simplehttp.HandlerFunc) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
 		c := NewContext(ctx)
 		if err := handler(c); err != nil {
@@ -28,10 +28,10 @@ func Adapter(handler simplehttp.MedaHandlerFunc) fasthttp.RequestHandler {
 	}
 }
 
-// MiddlewareAdapter converts MedaMiddleware to fasthttp middleware
-func MiddlewareAdapter(middleware simplehttp.MedaMiddlewareFunc) func(fasthttp.RequestHandler) fasthttp.RequestHandler {
+// MiddlewareAdapter converts SimpleHttp Middleware to fasthttp middleware
+func MiddlewareAdapter(middleware simplehttp.MiddlewareFunc) func(fasthttp.RequestHandler) fasthttp.RequestHandler {
 	return func(next fasthttp.RequestHandler) fasthttp.RequestHandler {
-		return Adapter(middleware(func(c simplehttp.MedaContext) error {
+		return Adapter(middleware(func(c simplehttp.Context) error {
 			ctx := c.(*FHContext).ctx
 			next(ctx)
 			return nil
@@ -41,7 +41,7 @@ func MiddlewareAdapter(middleware simplehttp.MedaMiddlewareFunc) func(fasthttp.R
 
 // handleError processes errors and sends appropriate responses
 func handleError(c *FHContext, err error) {
-	if medaErr, ok := err.(*simplehttp.MedaError); ok {
+	if medaErr, ok := err.(*simplehttp.SimpleHttpError); ok {
 		c.JSON(medaErr.Code, medaErr)
 		return
 	}

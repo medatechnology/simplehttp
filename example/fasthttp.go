@@ -50,7 +50,7 @@ func TestFastHTTP() {
 	}
 }
 
-func listUsers(c simplehttp.MedaContext) error {
+func listUsers(c simplehttp.Context) error {
 	users := []FastHTTPUser{
 		{ID: "1", Name: "John"},
 		{ID: "2", Name: "Jane"},
@@ -58,7 +58,7 @@ func listUsers(c simplehttp.MedaContext) error {
 	return c.JSON(200, users)
 }
 
-func createUser(c simplehttp.MedaContext) error {
+func createUser(c simplehttp.Context) error {
 	var user FastHTTPUser
 	if err := c.BindJSON(&user); err != nil {
 		return err
@@ -66,7 +66,7 @@ func createUser(c simplehttp.MedaContext) error {
 	return c.JSON(201, user)
 }
 
-func getUser(c simplehttp.MedaContext) error {
+func getUser(c simplehttp.Context) error {
 	var user FastHTTPUser
 	err := c.Bind(&user)
 	if err != nil {
@@ -76,7 +76,7 @@ func getUser(c simplehttp.MedaContext) error {
 	return c.JSON(200, user)
 }
 
-func updateUser(c simplehttp.MedaContext) error {
+func updateUser(c simplehttp.Context) error {
 	var user FastHTTPUser
 	if err := c.BindJSON(&user); err != nil {
 		return err
@@ -84,6 +84,6 @@ func updateUser(c simplehttp.MedaContext) error {
 	return c.JSON(200, user)
 }
 
-func deleteUser(c simplehttp.MedaContext) error {
+func deleteUser(c simplehttp.Context) error {
 	return c.JSON(204, nil)
 }

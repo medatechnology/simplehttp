@@ -44,7 +44,7 @@ func main() {
     server := fasthttp.NewServer(config)
     
     // Define routes
-    server.GET("/", func(c simplehttp.MedaContext) error {
+    server.GET("/", func(c simplehttp.Context) error {
         return c.String(200, "Hello, World!")
     })
     
@@ -57,14 +57,14 @@ func main() {
 
 ## Configuration
 
-The FastHTTP implementation uses the standard MedaHTTP configuration. Here are the relevant environment variables:
+The FastHTTP implementation uses the standard SimpleHTTP configuration. Here are the relevant environment variables:
 
 ```bash
-MEDA_FRAMEWORK=fasthttp     # Specify FastHTTP as the framework
-MEDA_PORT=8080             # Server port
-MEDA_READ_TIMEOUT=30       # Read timeout in seconds
-MEDA_WRITE_TIMEOUT=30      # Write timeout in seconds
-MEDA_DEBUG=true           # Enable debug mode
+SIMPLEHTTP_FRAMEWORK=fasthttp     # Specify FastHTTP as the framework
+SIMPLEHTTP_PORT=8080             # Server port
+SIMPLEHTTP_READ_TIMEOUT=30s       # Read timeout in seconds
+SIMPLEHTTP_WRITE_TIMEOUT=30      # Write timeout in seconds
+SIMPLEHTTP_DEBUG=true           # Enable debug mode
 ```
 
 Custom configuration example:
@@ -107,7 +107,7 @@ api := server.Group("/api")
 Access route parameters using the context:
 
 ```go
-server.GET("/users/:id", func(c simplehttp.MedaContext) error {
+server.GET("/users/:id", func(c simplehttp.Context) error {
     id := c.GetParam("id")
     return c.JSON(200, map[string]string{"id": id})
 })
@@ -157,7 +157,7 @@ server.Use(simplehttp.RateLimiter(rateLimitConfig))
 The FastHTTP context implementation provides access to request and response functionality:
 
 ```go
-server.POST("/api/data", func(c simplehttp.MedaContext) error {
+server.POST("/api/data", func(c simplehttp.Context) error {
     // Get request headers
     headers := c.GetHeaders()
     
@@ -195,7 +195,7 @@ server.StaticFile("/favicon.ico", "./public/favicon.ico")
 Implementing WebSocket endpoints:
 
 ```go
-server.WebSocket("/ws", func(ws simplehttp.MedaWebsocket) error {
+server.WebSocket("/ws", func(ws simplehttp.WebSocket) error {
     for {
         var msg map[string]interface{}
         if err := ws.ReadJSON(&msg); err != nil {
@@ -263,7 +263,7 @@ func main() {
     }
 }
 
-func listUsers(c simplehttp.MedaContext) error {
+func listUsers(c simplehttp.Context) error {
     users := []User{
         {ID: "1", Name: "John"},
         {ID: "2", Name: "Jane"},
@@ -271,7 +271,7 @@ func listUsers(c simplehttp.MedaContext) error {
     return c.JSON(200, users)
 }
 
-func createUser(c simplehttp.MedaContext) error {
+func createUser(c simplehttp.Context) error {
     var user User
     if err := c.BindJSON(&user); err != nil {
         return err
@@ -279,13 +279,13 @@ func createUser(c simplehttp.MedaContext) error {
     return c.JSON(201, user)
 }
 
-func getUser(c simplehttp.MedaContext) error {
+func getUser(c simplehttp.Context) error {
     id := c.GetParam("id")
     user := User{ID: id, Name: "John Doe"}
     return c.JSON(200, user)
 }
 
-func updateUser(c simplehttp.MedaContext) error {
+func updateUser(c simplehttp.Context) error {
     var user User
     if err := c.BindJSON(&user); err != nil {
         return err
@@ -293,7 +293,7 @@ func updateUser(c simplehttp.MedaContext) error {
     return c.JSON(200, user)
 }
 
-func deleteUser(c simplehttp.MedaContext) error {
+func deleteUser(c simplehttp.Context) error {
     return c.JSON(204, nil)
 }
 ```
@@ -301,7 +301,7 @@ func deleteUser(c simplehttp.MedaContext) error {
 ### File Upload Example
 
 ```go
-func handleFileUpload(c simplehttp.MedaContext) error {
+func handleFileUpload(c simplehttp.Context) error {
     file, err := c.GetFile("file")
     if err != nil {
         return err
@@ -335,7 +335,7 @@ The FastHTTP implementation is designed for high performance. Here are some tips
 The FastHTTP implementation includes built-in error handling:
 
 ```go
-func handler(c simplehttp.MedaContext) error {
+func handler(c simplehttp.SimpleHttpContext) error {
     // Return MedaError for structured error responses
     if someError {
         return simplehttp.NewError(400, "Bad Request", details)
