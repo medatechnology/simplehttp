@@ -35,6 +35,9 @@ type Context interface {
 	SaveFile(file *multipart.FileHeader, dst string) error
 	SendFile(filepath string, attachment bool) error
 
+	// SSE (Server-Sent Events)
+	SSE(handler SSEHandler) error
+
 	// Websocket
 	Upgrade() (Websocket, error)
 

@@ -212,6 +212,12 @@ func (c *FiberContext) SendFile(filepath string, attachment bool) error {
 	return c.ctx.SendFile(filepath)
 }
 
+// SSE starts a Server-Sent Events stream
+func (c *FiberContext) SSE(handler simplehttp.SSEHandler) error {
+	writer := simplehttp.NewSSEWriter(c.Response())
+	return handler(writer)
+}
+
 // WebSocket handling
 func (c *FiberContext) Upgrade() (simplehttp.Websocket, error) {
 	if !websocket.IsWebSocketUpgrade(c.ctx) {

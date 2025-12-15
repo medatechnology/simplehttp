@@ -204,6 +204,12 @@ func (c *FHContext) SendFile(filepath string, attachment bool) error {
 	return nil
 }
 
+// SSE starts a Server-Sent Events stream
+func (c *FHContext) SSE(handler simplehttp.SSEHandler) error {
+	writer := simplehttp.NewSSEWriter(c.Response())
+	return handler(writer)
+}
+
 func (c *FHContext) Upgrade() (simplehttp.Websocket, error) {
 	// TODO: Implement WebSocket upgrade using fasthttp.Upgrader
 	return nil, fmt.Errorf("websocket not implemented for fasthttp")

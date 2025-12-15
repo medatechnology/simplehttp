@@ -119,6 +119,12 @@ func (c *EchoContext) SendFile(filepath string, attachment bool) error {
 	return c.ctx.File(filepath)
 }
 
+// SSE starts a Server-Sent Events stream
+func (c *EchoContext) SSE(handler simplehttp.SSEHandler) error {
+	writer := simplehttp.NewSSEWriter(c.Response())
+	return handler(writer)
+}
+
 func (c *EchoContext) Upgrade() (simplehttp.Websocket, error) {
 	var checkOrigin func(r *http.Request) bool
 
