@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	utils "github.com/medatechnology/goutil"
+	"github.com/medatechnology/goutil/utils"
 )
 
 // HTTP client configuration constants

@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	utils "github.com/medatechnology/goutil"
+	"github.com/medatechnology/goutil/utils"
 	"github.com/medatechnology/simplehttp"
 	"github.com/medatechnology/simplehttp/framework/fiber"
 )

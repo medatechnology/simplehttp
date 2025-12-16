@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	utils "github.com/medatechnology/goutil"
+	"github.com/medatechnology/goutil/utils"
 )
 
 const (

@@ -9,7 +9,7 @@ require (
 	github.com/gofiber/websocket/v2 v2.2.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/labstack/echo/v5 v5.0.0-20220201181537-ed2888cfa198
-	github.com/medatechnology/goutil v0.0.7
+	github.com/medatechnology/goutil v1.2.2
 	github.com/mileusna/useragent v1.3.5
 	github.com/valyala/fasthttp v1.60.0
 	golang.org/x/time v0.11.0
