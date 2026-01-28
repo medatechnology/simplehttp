@@ -77,6 +77,25 @@ func TestSimpleHTTP(server simplehttp.Server, config *simplehttp.Config) {
 			users.DELETE("/:id", deleteUser)
 		}
 
+		// Phase 1 Features Demo
+		features := api.Group("/features")
+		{
+			// Path Params: /api/features/params/user123/25
+			features.GET("/params/:id/:age", featureParamHandler)
+			
+			// Cookies
+			features.GET("/cookie", featureCookieHandler)
+			
+			// Redirects
+			features.GET("/redirect", featureRedirectHandler)
+			
+			// Forms
+			features.POST("/form", featureFormHandler)
+			
+			// Status Helpers: /api/features/status/404
+			features.GET("/status/:action", featureStatusHandler)
+		}
+
 		api.GET("/status", func(c simplehttp.Context) error {
 			headers := c.GetHeaders()
 			rid := c.GetHeader(simplehttp.HEADER_REQUEST_ID)

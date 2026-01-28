@@ -10,6 +10,7 @@ var (
 	ErrUnauthorized      = fmt.Errorf("unauthorized")
 	ErrForbidden         = fmt.Errorf("forbidden")
 	ErrRateLimitExceeded = fmt.Errorf("limit exceeded")
+	ErrParamNotFound     = fmt.Errorf("path parameter not found")
 )
 
 // SimpleHttpError represents a standardized error response

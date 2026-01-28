@@ -51,6 +51,35 @@ type Context interface {
 	Bind(interface{}) error // Generic binding based on Content-Type
 	BindJSON(interface{}) error
 	BindForm(interface{}) error
+
+	// Path parameters (Phase 1 - v0.1.0)
+	GetParam(key string) string
+	GetParams() map[string]string
+	GetParamInt(key string) (int, error)
+	GetParamInt64(key string) (int64, error)
+
+	// Cookie handling (Phase 1 - v0.1.0)
+	GetCookie(name string) (string, error)
+	SetCookie(cookie *http.Cookie)
+	SetCookieSimple(name, value string, maxAge int)
+	DeleteCookie(name string)
+
+	// Redirect methods (Phase 1 - v0.1.0)
+	Redirect(code int, url string) error
+	RedirectPermanent(url string) error
+	RedirectTemporary(url string) error
+
+	// Form values (Phase 1 - v0.1.0)
+	GetFormValue(key string) string
+	GetFormValues() map[string][]string
+
+	// Response status helpers (Phase 1 - v0.1.0)
+	NoContent() error
+	NotFound() error
+	BadRequest(message string) error
+	Unauthorized(message string) error
+	Forbidden(message string) error
+	InternalServerError(message string) error
 }
 
 // Websocket interface for websocket connections

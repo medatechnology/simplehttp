@@ -1,3 +1,4 @@
 main.0.0.3	Commit: Renaming everything Meda into SimpleHTTP
 main.0.0.2	Commit: Added http client package, not yet tested. Also retrieve from last commit, because it was wiped off from my local copy
 main.0.0.1	Commit: Init simplehttp
+main.0.1.0Commit: Implement Phase 1 features: Path Params, Cookies, Redirects, Form Values, Status Helpers

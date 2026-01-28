@@ -10,7 +10,9 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
@@ -324,9 +326,155 @@ func (c *FiberContext) BindForm(v interface{}) error {
 		return err
 	}
 
+	// If formData is empty, return immediately
+	if len(formData) == 0 {
+		return nil
+	}
+	// TODO : if we have time, improve the reflection and make it dynamic based on tag
 	result := object.MapToStruct[any](formData)
 	reflect.ValueOf(v).Elem().Set(reflect.ValueOf(result))
 	return nil
+}
+
+// Path parameters (Phase 1 - v0.1.0)
+func (c *FiberContext) GetParam(key string) string {
+	return c.ctx.Params(key)
+}
+
+func (c *FiberContext) GetParams() map[string]string {
+	params := make(map[string]string)
+	// Fiber stores params differently - iterate through all params
+	if c.ctx.Route() != nil {
+		for _, param := range c.ctx.Route().Params {
+			params[param] = c.ctx.Params(param)
+		}
+	}
+	return params
+}
+
+func (c *FiberContext) GetParamInt(key string) (int, error) {
+	value := c.ctx.Params(key)
+	if value == "" {
+		return 0, simplehttp.ErrParamNotFound
+	}
+	return strconv.Atoi(value)
+}
+
+func (c *FiberContext) GetParamInt64(key string) (int64, error) {
+	value := c.ctx.Params(key)
+	if value == "" {
+		return 0, simplehttp.ErrParamNotFound
+	}
+	return strconv.ParseInt(value, 10, 64)
+}
+
+// Cookie handling (Phase 1 - v0.1.0)
+func (c *FiberContext) GetCookie(name string) (string, error) {
+	value := c.ctx.Cookies(name)
+	if value == "" {
+		return "", fmt.Errorf("cookie not found: %s", name)
+	}
+	return value, nil
+}
+
+func (c *FiberContext) SetCookie(cookie *http.Cookie) {
+	fiberCookie := &fiber.Cookie{
+		Name:     cookie.Name,
+		Value:    cookie.Value,
+		Path:     cookie.Path,
+		Domain:   cookie.Domain,
+		MaxAge:   cookie.MaxAge,
+		Expires:  cookie.Expires,
+		Secure:   cookie.Secure,
+		HTTPOnly: cookie.HttpOnly,
+		SameSite: string(cookie.SameSite),
+	}
+	c.ctx.Cookie(fiberCookie)
+}
+
+func (c *FiberContext) SetCookieSimple(name, value string, maxAge int) {
+	c.ctx.Cookie(&fiber.Cookie{
+		Name:     name,
+		Value:    value,
+		MaxAge:   maxAge,
+		Path:     "/",
+		HTTPOnly: true,
+	})
+}
+
+func (c *FiberContext) DeleteCookie(name string) {
+	c.ctx.Cookie(&fiber.Cookie{
+		Name:    name,
+		Value:   "",
+		MaxAge:  -1,
+		Expires: time.Now().Add(-time.Hour),
+		Path:    "/",
+	})
+}
+
+// Redirect methods (Phase 1 - v0.1.0)
+func (c *FiberContext) Redirect(code int, url string) error {
+	return c.ctx.Redirect(url, code)
+}
+
+func (c *FiberContext) RedirectPermanent(url string) error {
+	return c.ctx.Redirect(url, http.StatusMovedPermanently)
+}
+
+func (c *FiberContext) RedirectTemporary(url string) error {
+	return c.ctx.Redirect(url, http.StatusFound)
+}
+
+// Form values (Phase 1 - v0.1.0)
+func (c *FiberContext) GetFormValue(key string) string {
+	return c.ctx.FormValue(key)
+}
+
+func (c *FiberContext) GetFormValues() map[string][]string {
+	form := make(map[string][]string)
+	c.ctx.Request().PostArgs().VisitAll(func(key, value []byte) {
+		keyStr := string(key)
+		if _, exists := form[keyStr]; !exists {
+			form[keyStr] = []string{}
+		}
+		form[keyStr] = append(form[keyStr], string(value))
+	})
+	return form
+}
+
+// Response status helpers (Phase 1 - v0.1.0)
+func (c *FiberContext) NoContent() error {
+	return c.ctx.SendStatus(http.StatusNoContent)
+}
+
+func (c *FiberContext) NotFound() error {
+	return c.ctx.Status(http.StatusNotFound).JSON(map[string]string{
+		"error": "Not Found",
+	})
+}
+
+func (c *FiberContext) BadRequest(message string) error {
+	return c.ctx.Status(http.StatusBadRequest).JSON(map[string]string{
+		"error": message,
+	})
+}
+
+func (c *FiberContext) Unauthorized(message string) error {
+	return c.ctx.Status(http.StatusUnauthorized).JSON(map[string]string{
+		"error": message,
+	})
+}
+
+func (c *FiberContext) Forbidden(message string) error {
+	return c.ctx.Status(http.StatusForbidden).JSON(map[string]string{
+		"error": message,
+	})
+}
+
+func (c *FiberContext) InternalServerError(message string) error {
+	return c.ctx.Status(http.StatusInternalServerError).JSON(map[string]string{
+		"error": message,
+	})
 }
 
 // WebSocket implementation

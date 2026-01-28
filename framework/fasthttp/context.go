@@ -308,6 +308,164 @@ func (c *FHContext) BindForm(v interface{}) error {
 	return nil
 }
 
+// Path parameters (Phase 1 - v0.1.0)
+func (c *FHContext) GetParam(key string) string {
+	val := c.ctx.UserValue(key)
+	if val == nil {
+		return ""
+	}
+	if str, ok := val.(string); ok {
+		return str
+	}
+	return fmt.Sprintf("%v", val)
+}
+
+func (c *FHContext) GetParams() map[string]string {
+	params := make(map[string]string)
+	c.ctx.VisitUserValues(func(key []byte, value interface{}) {
+		if str, ok := value.(string); ok {
+			params[string(key)] = str
+		}
+	})
+	return params
+}
+
+func (c *FHContext) GetParamInt(key string) (int, error) {
+	val := c.ctx.UserValue(key)
+	if val == nil {
+		return 0, simplehttp.ErrParamNotFound
+	}
+	if str, ok := val.(string); ok {
+		var result int
+		_, err := fmt.Sscanf(str, "%d", &result)
+		return result, err
+	}
+	return 0, fmt.Errorf("param %s is not a string", key)
+}
+
+func (c *FHContext) GetParamInt64(key string) (int64, error) {
+	val := c.ctx.UserValue(key)
+	if val == nil {
+		return 0, simplehttp.ErrParamNotFound
+	}
+	if str, ok := val.(string); ok {
+		var result int64
+		_, err := fmt.Sscanf(str, "%d", &result)
+		return result, err
+	}
+	return 0, fmt.Errorf("param %s is not a string", key)
+}
+
+// Cookie handling (Phase 1 - v0.1.0)
+func (c *FHContext) GetCookie(name string) (string, error) {
+	value := string(c.ctx.Request.Header.Cookie(name))
+	if value == "" {
+		return "", fmt.Errorf("cookie not found: %s", name)
+	}
+	return value, nil
+}
+
+func (c *FHContext) SetCookie(cookie *http.Cookie) {
+	var fastCookie fasthttp.Cookie
+	fastCookie.SetKey(cookie.Name)
+	fastCookie.SetValue(cookie.Value)
+	fastCookie.SetPath(cookie.Path)
+	fastCookie.SetDomain(cookie.Domain)
+	fastCookie.SetMaxAge(cookie.MaxAge)
+	fastCookie.SetExpire(cookie.Expires)
+	fastCookie.SetSecure(cookie.Secure)
+	fastCookie.SetHTTPOnly(cookie.HttpOnly)
+	c.ctx.Response.Header.SetCookie(&fastCookie)
+}
+
+func (c *FHContext) SetCookieSimple(name, value string, maxAge int) {
+	var cookie fasthttp.Cookie
+	cookie.SetKey(name)
+	cookie.SetValue(value)
+	cookie.SetMaxAge(maxAge)
+	cookie.SetPath("/")
+	cookie.SetHTTPOnly(true)
+	c.ctx.Response.Header.SetCookie(&cookie)
+}
+
+func (c *FHContext) DeleteCookie(name string) {
+	var cookie fasthttp.Cookie
+	cookie.SetKey(name)
+	cookie.SetValue("")
+	cookie.SetMaxAge(-1)
+	cookie.SetPath("/")
+	c.ctx.Response.Header.SetCookie(&cookie)
+}
+
+// Redirect methods (Phase 1 - v0.1.0)
+func (c *FHContext) Redirect(code int, url string) error {
+	c.ctx.Redirect(url, code)
+	return nil
+}
+
+func (c *FHContext) RedirectPermanent(url string) error {
+	c.ctx.Redirect(url, http.StatusMovedPermanently)
+	return nil
+}
+
+func (c *FHContext) RedirectTemporary(url string) error {
+	c.ctx.Redirect(url, http.StatusFound)
+	return nil
+}
+
+// Form values (Phase 1 - v0.1.0)
+func (c *FHContext) GetFormValue(key string) string {
+	return string(c.ctx.PostArgs().Peek(key))
+}
+
+func (c *FHContext) GetFormValues() map[string][]string {
+	form := make(map[string][]string)
+	c.ctx.PostArgs().VisitAll(func(key, value []byte) {
+		keyStr := string(key)
+		if _, exists := form[keyStr]; !exists {
+			form[keyStr] = []string{}
+		}
+		form[keyStr] = append(form[keyStr], string(value))
+	})
+	return form
+}
+
+// Response status helpers (Phase 1 - v0.1.0)
+func (c *FHContext) NoContent() error {
+	c.ctx.SetStatusCode(http.StatusNoContent)
+	return nil
+}
+
+func (c *FHContext) NotFound() error {
+	return c.JSON(http.StatusNotFound, map[string]string{
+		"error": "Not Found",
+	})
+}
+
+func (c *FHContext) BadRequest(message string) error {
+	return c.JSON(http.StatusBadRequest, map[string]string{
+		"error": message,
+	})
+}
+
+func (c *FHContext) Unauthorized(message string) error {
+	return c.JSON(http.StatusUnauthorized, map[string]string{
+		"error": message,
+	})
+}
+
+func (c *FHContext) Forbidden(message string) error {
+	return c.JSON(http.StatusForbidden, map[string]string{
+		"error": message,
+	})
+}
+
+func (c *FHContext) InternalServerError(message string) error {
+	return c.JSON(http.StatusInternalServerError, map[string]string{
+		"error": message,
+	})
+}
+
 // responseWriter implements http.ResponseWriter for fasthttp
 type responseWriter struct {
 	ctx *fasthttp.RequestCtx

@@ -3,6 +3,7 @@ package echo
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -187,6 +188,134 @@ func (c *EchoContext) BindJSON(i interface{}) error {
 
 func (c *EchoContext) BindForm(i interface{}) error {
 	return c.ctx.Bind(i)
+}
+
+// Path parameters (Phase 1 - v0.1.0)
+func (c *EchoContext) GetParam(key string) string {
+	return c.ctx.PathParam(key)
+}
+
+func (c *EchoContext) GetParams() map[string]string {
+	params := make(map[string]string)
+	pathParams := c.ctx.PathParams()
+	for _, p := range pathParams {
+		params[p.Name] = p.Value
+	}
+	return params
+}
+
+func (c *EchoContext) GetParamInt(key string) (int, error) {
+	value := c.ctx.PathParam(key)
+	if value == "" {
+		return 0, simplehttp.ErrParamNotFound
+	}
+	var result int
+	_, err := fmt.Sscanf(value, "%d", &result)
+	return result, err
+}
+
+func (c *EchoContext) GetParamInt64(key string) (int64, error) {
+	value := c.ctx.PathParam(key)
+	if value == "" {
+		return 0, simplehttp.ErrParamNotFound
+	}
+	var result int64
+	_, err := fmt.Sscanf(value, "%d", &result)
+	return result, err
+}
+
+// Cookie handling (Phase 1 - v0.1.0)
+func (c *EchoContext) GetCookie(name string) (string, error) {
+	cookie, err := c.ctx.Cookie(name)
+	if err != nil {
+		return "", err
+	}
+	return cookie.Value, nil
+}
+
+func (c *EchoContext) SetCookie(cookie *http.Cookie) {
+	c.ctx.SetCookie(cookie)
+}
+
+func (c *EchoContext) SetCookieSimple(name, value string, maxAge int) {
+	cookie := &http.Cookie{
+		Name:     name,
+		Value:    value,
+		MaxAge:   maxAge,
+		Path:     "/",
+		HttpOnly: true,
+	}
+	c.ctx.SetCookie(cookie)
+}
+
+func (c *EchoContext) DeleteCookie(name string) {
+	cookie := &http.Cookie{
+		Name:   name,
+		Value:  "",
+		MaxAge: -1,
+		Path:   "/",
+	}
+	c.ctx.SetCookie(cookie)
+}
+
+// Redirect methods (Phase 1 - v0.1.0)
+func (c *EchoContext) Redirect(code int, url string) error {
+	return c.ctx.Redirect(code, url)
+}
+
+func (c *EchoContext) RedirectPermanent(url string) error {
+	return c.ctx.Redirect(http.StatusMovedPermanently, url)
+}
+
+func (c *EchoContext) RedirectTemporary(url string) error {
+	return c.ctx.Redirect(http.StatusFound, url)
+}
+
+// Form values (Phase 1 - v0.1.0)
+func (c *EchoContext) GetFormValue(key string) string {
+	return c.ctx.FormValue(key)
+}
+
+func (c *EchoContext) GetFormValues() map[string][]string {
+	if err := c.ctx.Request().ParseForm(); err != nil {
+		return make(map[string][]string)
+	}
+	return c.ctx.Request().Form
+}
+
+// Response status helpers (Phase 1 - v0.1.0)
+func (c *EchoContext) NoContent() error {
+	return c.ctx.NoContent(http.StatusNoContent)
+}
+
+func (c *EchoContext) NotFound() error {
+	return c.ctx.JSON(http.StatusNotFound, map[string]string{
+		"error": "Not Found",
+	})
+}
+
+func (c *EchoContext) BadRequest(message string) error {
+	return c.ctx.JSON(http.StatusBadRequest, map[string]string{
+		"error": message,
+	})
+}
+
+func (c *EchoContext) Unauthorized(message string) error {
+	return c.ctx.JSON(http.StatusUnauthorized, map[string]string{
+		"error": message,
+	})
+}
+
+func (c *EchoContext) Forbidden(message string) error {
+	return c.ctx.JSON(http.StatusForbidden, map[string]string{
+		"error": message,
+	})
+}
+
+func (c *EchoContext) InternalServerError(message string) error {
+	return c.ctx.JSON(http.StatusInternalServerError, map[string]string{
+		"error": message,
+	})
 }
 
 // EchoWebSocket implements MedaWebsocket interface using gorilla

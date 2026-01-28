@@ -140,6 +140,93 @@ Your API is now running! Try these endpoints:
 - GET http://localhost:8080/hello
 - GET http://localhost:8080/api/status
 
+## Core Features (v0.1.0)
+
+### Path Parameters
+
+SimpleHttp now supports unified path parameter extraction across all frameworks:
+
+```go
+// Route: /users/:id/posts/:postId
+server.GET("/users/:id/posts/:postId", func(c simplehttp.Context) error {
+    // Get string param
+    userID := c.GetParam("id")
+    
+    // Get integer param (with validation)
+    postID, err := c.GetParamInt("postId")
+    if err != nil {
+        return c.BadRequest("Invalid post ID")
+    }
+    
+    return c.JSON(200, map[string]interface{}{
+        "user": userID,
+        "post": postID,
+    })
+})
+```
+
+### Cookie Handling
+
+Easy cookie management:
+
+```go
+// Set cookie
+c.SetCookieSimple("session_id", "xyz123", 3600) // name, value, maxAge
+
+// Get cookie
+if cookie, err := c.GetCookie("session_id"); err == nil {
+    fmt.Println("Session:", cookie)
+}
+
+// Delete cookie
+c.DeleteCookie("session_id")
+```
+
+### Redirects
+
+Standardized redirect methods:
+
+```go
+// Temporary redirect (302)
+c.RedirectTemporary("/new-url")
+
+// Permanent redirect (301)
+c.RedirectPermanent("/old-url-moved")
+
+// Custom code
+c.Redirect(307, "/maintainance")
+```
+
+### Form Handling
+
+Extract form values from `multipart/form-data` or `application/x-www-form-urlencoded`:
+
+```go
+func handleForm(c simplehttp.Context) error {
+    username := c.GetFormValue("username")
+    email := c.GetFormValue("email")
+    
+    return c.JSON(200, map[string]string{
+        "user": username,
+        "email": email,
+    })
+}
+```
+
+### Status Helpers
+
+Quick status response helpers:
+
+```go
+c.NoContent()              // 204
+c.BadRequest("Bad Input")  // 400
+c.Unauthorized("Login")    // 401
+c.Forbidden("No Access")   // 403
+c.NotFound()               // 404
+c.InternalServerError("Oops") // 500
+```
+
+
 ## Middleware
 
 SimpleHttp comes with several built-in middleware components that you can use to enhance your application:
