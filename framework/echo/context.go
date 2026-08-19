@@ -8,6 +8,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	fp "path/filepath"
 
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v5"
@@ -114,10 +115,20 @@ func (c *EchoContext) SaveFile(file *multipart.FileHeader, dst string) error {
 }
 
 func (c *EchoContext) SendFile(filepath string, attachment bool) error {
-	if attachment {
-		return c.ctx.Attachment(filepath, filepath)
+	f, err := os.Open(filepath)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound)
 	}
-	return c.ctx.File(filepath)
+	defer f.Close()
+	fi, err := f.Stat()
+	if err != nil {
+		return err
+	}
+	if attachment {
+		c.ctx.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", fp.Base(filepath)))
+	}
+	http.ServeContent(c.ctx.Response(), c.ctx.Request(), fi.Name(), fi.ModTime(), f)
+	return nil
 }
 
 // SSE starts a Server-Sent Events stream
